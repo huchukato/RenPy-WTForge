@@ -1,7 +1,7 @@
 # 🎮 Ren'Py WTForge
 
 <p align="center">
-  <img src="logo.png" alt="Ren'Py WTForge Logo" width="160">
+  <img src="logo_512.png" alt="Ren'Py WTForge Logo" width="160">
 </p>
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)
@@ -31,9 +31,15 @@
 
 ---
 
-## 🖥️ How it looks in-game
+## 🖥️ Screenshots
 
-Choices are displayed with color and a small hint label:
+**GUI:**
+
+<p align="center">
+  <img src="gui.png" alt="WTForge GUI" width="800">
+</p>
+
+**In-game choices with color and hint label:**
 
 ```
 {color=#00b894}My girlfriend.{/color}  {color=#aaaaaa}(Alice +1){/color}

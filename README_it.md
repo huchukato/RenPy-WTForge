@@ -1,13 +1,13 @@
 # 🎮 Ren'Py WTForge
 
 <p align="center">
-  <img src="logo.png" alt="Ren'Py WTForge Logo" width="160">
+  <img src="logo_512.png" alt="Ren'Py WTForge Logo" width="160">
 </p>
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)
 ![Platform](https://img.shields.io/badge/Piattaforma-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 ![License](https://img.shields.io/badge/Licenza-As--Is-orange)
-![GUI](https://img.shields.io/badge/GUI-tkinter-green)
+![GUI](https://img.shields.io/badge/GUI-customtkinter-green)
 ![Status](https://img.shields.io/badge/Stato-Attivo-brightgreen)
 
 > Uno strumento GUI universale per generare automaticamente **mod walkthrough** per i giochi Ren'Py — con scelte colorate, etichette hint personalizzabili e sblocco gallery. Nessun codice richiesto.
@@ -31,9 +31,15 @@
 
 ---
 
-## 🖥️ Come appare nel gioco
+## 🖥️ Screenshot
 
-Le scelte vengono visualizzate con colore e un piccolo hint:
+**GUI:**
+
+<p align="center">
+  <img src="gui.png" alt="WTForge GUI" width="800">
+</p>
+
+**Scelte in gioco con colore e hint:**
 
 ```
 {color=#00b894}La mia ragazza.{/color}  {color=#aaaaaa}(Alice +1){/color}
