@@ -7,3 +7,5 @@ config/
 uv.lock
 logo_512.png
 logo.png
+dist/
+build.sh
