@@ -1,0 +1,12 @@
+[project]
+name = "renpy-wtforge"
+version = "1.0.0"
+description = "Ren'Py WTForge - Universal Walkthrough Mod Generator"
+requires-python = ">=3.9"
+dependencies = [
+    "customtkinter>=5.2.0",
+    "pillow>=10.0.0",
+]
+
+[tool.uv]
+python-preference = "system"

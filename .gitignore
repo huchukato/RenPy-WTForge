@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.venv/
+.DS_Store
+config/
+uv.lock
+logo_512.png
+logo.png
