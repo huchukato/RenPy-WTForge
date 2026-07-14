@@ -288,6 +288,55 @@ init 666 python:
             f.write(self.generate_gallery_unlocker())
         return gallery_path
 
+    def generate_devtools(self):
+        """Genera il contenuto del file Dev Tools"""
+        return """# Ren'Py WTForge - Dev Tools
+# Generated automatically. Enables developer features at init priority 999.
+# Delete this file to disable.
+
+init 999 python:
+    # Enable developer console (Shift+O or backtick)
+    try:
+        config.console = True
+    except Exception:
+        pass
+
+    # Enable developer menu (Shift+D)
+    try:
+        config.developer = True
+    except Exception:
+        pass
+
+    # Enable Quick Save (Q) and Quick Load (Alt+Q)
+    try:
+        config.has_quicksave = True
+        config.has_autosave = True
+    except Exception:
+        pass
+
+    # Force enable skipping of unseen/unread content
+    try:
+        config.allow_skipping = True
+        _preferences.skip_unseen = True
+    except Exception:
+        pass
+
+    # Force enable rollback (scroll wheel / page up)
+    try:
+        config.rollback_enabled = True
+        config.hard_rollback_limit = -1
+    except Exception:
+        pass
+"""
+
+    def export_devtools(self):
+        """Scrive il file Dev Tools nella directory di output"""
+        self.create_output_directory()
+        devtools_path = self.output_dir / "wtmod_devtools.rpy"
+        with open(devtools_path, 'w', encoding='utf-8') as f:
+            f.write(self.generate_devtools())
+        return devtools_path
+
     def load_config(self, config_path):
         """Carica la configurazione da un file JSON"""
         try:

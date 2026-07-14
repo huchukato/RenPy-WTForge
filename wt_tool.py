@@ -82,7 +82,11 @@ TRANSLATIONS = {
         'export_mod_title': "Choose destination folder for '{}'",
         'export_mod_done': "Mod exported to:\n{}",
         'export_mod_error': "Export error: {}",
-        'no_mod_to_export': "Generate the mod first before exporting."
+        'no_mod_to_export': "Generate the mod first before exporting.",
+        'dev_tools': "Dev Tools",
+        'dev_tools_generated': "Dev Tools enabled!",
+        'dev_tools_saved_path': "Dev Tools saved to:\n{}",
+        'dev_tools_error': "Error generating Dev Tools: {}"
     },
     'it': {
         'title': "Ren'Py WTForge",
@@ -146,7 +150,11 @@ TRANSLATIONS = {
         'export_mod_title': "Scegli cartella destinazione per '{}'",
         'export_mod_done': "Mod esportata in:\n{}",
         'export_mod_error': "Errore export: {}",
-        'no_mod_to_export': "Genera prima la mod prima di esportarla."
+        'no_mod_to_export': "Genera prima la mod prima di esportarla.",
+        'dev_tools': "Dev Tools",
+        'dev_tools_generated': "Dev Tools abilitati!",
+        'dev_tools_saved_path': "Dev Tools salvati in:\n{}",
+        'dev_tools_error': "Errore generazione Dev Tools: {}"
     }
 }
 
@@ -378,6 +386,8 @@ class RenPyWTTool:
                       fg_color="#00b894", hover_color="#019874", **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('gallery_unlocker'), command=self.generate_gallery_unlocker,
                       fg_color="#6c5ce7", hover_color="#5a4dcc", **btn_cfg).pack(side="left", padx=4, pady=8)
+        ctk.CTkButton(frame, text=self.t('dev_tools'), command=self.generate_devtools,
+                      fg_color="#fd79a8", hover_color="#e0678f", **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('export_mod'), command=self.export_mod,
                       fg_color="#e17055", hover_color="#c0604a", **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('save_config'), command=self.save_config, **btn_cfg).pack(side="left", padx=4, pady=8)
@@ -557,6 +567,19 @@ class RenPyWTTool:
             self.log(self.t('gallery_saved_path', gallery_path))
         except Exception as e:
             messagebox.showerror(self.t('error'), self.t('gallery_error', str(e)))
+
+    def generate_devtools(self):
+        """Genera il file Dev Tools"""
+        if not self.game_path:
+            messagebox.showerror(self.t('error'), self.t('select_game_first'))
+            return
+        try:
+            gen = WTGenerator(self.game_path, self.export_mode)
+            devtools_path = gen.export_devtools()
+            messagebox.showinfo(self.t('dev_tools_generated'), self.t('dev_tools_saved_path', devtools_path))
+            self.log(self.t('dev_tools_saved_path', devtools_path))
+        except Exception as e:
+            messagebox.showerror(self.t('error'), self.t('dev_tools_error', str(e)))
 
     def _game_display_name(self) -> str:
         _skip = {"game", "autorun", "Contents", "Resources", "MacOS", "data"}
