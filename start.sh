@@ -20,6 +20,7 @@ fi
 
 echo "[WTForge] Starting..."
 cd "$SCRIPT_DIR"
+export UV_LINK_MODE=copy
 
 # Usa il python di sistema (ha Tcl/Tk) invece del bundled uv
 PYTHON_BIN=$(command -v python3 || command -v python)
