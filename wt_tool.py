@@ -77,7 +77,12 @@ TRANSLATIONS = {
         'gallery_unlocker': "Gallery Unlocker",
         'gallery_generated': "Gallery Unlocker generated!",
         'gallery_saved_path': "Gallery Unlocker saved to:\n{}",
-        'gallery_error': "Error generating Gallery Unlocker: {}"
+        'gallery_error': "Error generating Gallery Unlocker: {}",
+        'export_mod': "Export Mod",
+        'export_mod_title': "Choose destination folder for '{}'",
+        'export_mod_done': "Mod exported to:\n{}",
+        'export_mod_error': "Export error: {}",
+        'no_mod_to_export': "Generate the mod first before exporting."
     },
     'it': {
         'title': "Ren'Py WTForge",
@@ -136,7 +141,12 @@ TRANSLATIONS = {
         'gallery_unlocker': "Sblocca Gallery",
         'gallery_generated': "Gallery Unlocker generato!",
         'gallery_saved_path': "Gallery Unlocker salvato in:\n{}",
-        'gallery_error': "Errore generazione Gallery Unlocker: {}"
+        'gallery_error': "Errore generazione Gallery Unlocker: {}",
+        'export_mod': "Esporta Mod",
+        'export_mod_title': "Scegli cartella destinazione per '{}'",
+        'export_mod_done': "Mod esportata in:\n{}",
+        'export_mod_error': "Errore export: {}",
+        'no_mod_to_export': "Genera prima la mod prima di esportarla."
     }
 }
 
@@ -368,6 +378,8 @@ class RenPyWTTool:
                       fg_color="#00b894", hover_color="#019874", **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('gallery_unlocker'), command=self.generate_gallery_unlocker,
                       fg_color="#6c5ce7", hover_color="#5a4dcc", **btn_cfg).pack(side="left", padx=4, pady=8)
+        ctk.CTkButton(frame, text=self.t('export_mod'), command=self.export_mod,
+                      fg_color="#e17055", hover_color="#c0604a", **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('save_config'), command=self.save_config, **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('load_config'), command=self.load_config, **btn_cfg).pack(side="left", padx=4, pady=8)
 
@@ -545,6 +557,40 @@ class RenPyWTTool:
             self.log(self.t('gallery_saved_path', gallery_path))
         except Exception as e:
             messagebox.showerror(self.t('error'), self.t('gallery_error', str(e)))
+
+    def _game_display_name(self) -> str:
+        _skip = {"game", "autorun", "Contents", "Resources", "MacOS", "data"}
+        p = Path(self.game_path)
+        for part in reversed(p.parts):
+            if part.endswith(".app"):
+                return part[:-4]
+            if part not in _skip:
+                return part
+        return p.name
+
+    def export_mod(self):
+        if not self.game_path or not self.generator:
+            messagebox.showwarning(self.t('error'), self.t('no_mod_to_export'))
+            return
+        wtmod_src = self.generator.output_dir
+        if not wtmod_src.exists():
+            messagebox.showwarning(self.t('error'), self.t('no_mod_to_export'))
+            return
+        game_name = self._game_display_name()
+        default_name = f"{game_name}-wtmod"
+        dest = filedialog.askdirectory(title=self.t('export_mod_title', default_name))
+        if not dest:
+            return
+        import shutil
+        export_dir = Path(dest) / default_name / "game" / "wtmod"
+        try:
+            if export_dir.exists():
+                shutil.rmtree(export_dir)
+            shutil.copytree(wtmod_src, export_dir)
+            messagebox.showinfo(self.t('export_mod'), self.t('export_mod_done', export_dir.parent.parent))
+            self.log(self.t('export_mod_done', export_dir.parent.parent))
+        except Exception as e:
+            messagebox.showerror(self.t('error'), self.t('export_mod_error', str(e)))
 
     def save_config(self):
         """Salva configurazione"""
