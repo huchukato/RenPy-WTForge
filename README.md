@@ -113,6 +113,17 @@ GameName/game/wtmod/
 
 ---
 
+## 🌐 Using with Ren'Py Translator
+
+If you also use **[Ren'Py Translator](https://github.com/huchukato/RenPy-Translator)** to translate the game, the recommended order is:
+
+1. **Translate first** — run Ren'Py Translator to generate `game/tl/<lang>/`
+2. **Generate mod after** — run WTForge so the mod picks up the translated choice texts automatically
+
+> ⚠️ If you generate the mod **before** translating, the translation will overwrite the mod's choice labels with the original language. Always translate first.
+
+---
+
 ## 🗂️ Project Structure
 
 ```
