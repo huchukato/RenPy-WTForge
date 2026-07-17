@@ -27,7 +27,7 @@
 | 📦 **Estrazione automatica** | Estrae archivi `.rpa` tramite rpatool |
 | 🔓 **Decompilazione** | Decompila file `.rpyc` tramite unrpyc |
 | 🧠 **Analisi intelligente** | Rileva scelte con punteggi numerici, booleani (`True`/`False`) e chiamate a funzione (`change_relationship("alice", 1)`) |
-| 🎨 **Colorazione scelte** | � Scelte migliori, � Scelte peggiori, ⬜ Scelte neutre |
+| 🎨 **Colorazione scelte** | 🟦 Scelte migliori, 🟥 Scelte peggiori, ⬜ Scelte neutre |
 | ✏️ **Editor Hint** | Personalizza il testo hint accanto a ogni scelta (es. `rel_alice +1` → `Alice +1`) |
 | 🖼️ **Gallery Unlocker** | Genera con un click uno script per sbloccare tutta la gallery |
 | 🔍 **Filtri** | Mostra Tutte / Migliori / Neutre / Cattive |

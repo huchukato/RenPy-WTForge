@@ -27,7 +27,7 @@
 | 📦 **Auto Extraction** | Extracts `.rpa` archives using rpatool |
 | 🔓 **Decompilation** | Decompiles `.rpyc` files using unrpyc |
 | 🧠 **Smart Analysis** | Detects choices with numeric scores, booleans (`True`/`False`), and function calls (`change_relationship("alice", 1)`) |
-| 🎨 **Color Coding** | � Best choices, � Bad choices, ⬜ Neutral choices |
+| 🎨 **Color Coding** | 🟦 Best choices, 🟥 Bad choices, ⬜ Neutral choices |
 | ✏️ **Hint Text Editor** | Customize the hint shown next to each choice (e.g. `rel_alice +1` → `Alice +1`) |
 | 🖼️ **Gallery Unlocker** | One-click generator for a universal gallery unlock script |
 | 🔍 **Filters** | Show All / Best / Neutral / Bad choices |
