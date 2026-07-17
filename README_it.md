@@ -1,8 +1,6 @@
 # 🎮 Ren'Py WTForge
 
-<p align="center">
-  <img src="logo_512.png" alt="Ren'Py WTForge Logo" width="160">
-</p>
+![Ren'Py WTForge Logo](img/logo_512.png)
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)
 ![Platform](https://img.shields.io/badge/Piattaforma-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
@@ -14,6 +12,14 @@
 
 ---
 
+## 🖥️ Screenshot
+
+**GUI:**
+
+![WTForge GUI](img/gui.png)
+
+---
+
 ## ✨ Funzionalità
 
 | Funzione | Descrizione |
@@ -21,7 +27,7 @@
 | 📦 **Estrazione automatica** | Estrae archivi `.rpa` tramite rpatool |
 | 🔓 **Decompilazione** | Decompila file `.rpyc` tramite unrpyc |
 | 🧠 **Analisi intelligente** | Rileva scelte con punteggi numerici, booleani (`True`/`False`) e chiamate a funzione (`change_relationship("alice", 1)`) |
-| 🎨 **Colorazione scelte** | 🟢 Scelte migliori, 🔴 Scelte peggiori, 🔵 Scelte neutre |
+| 🎨 **Colorazione scelte** | � Scelte migliori, � Scelte peggiori, ⬜ Scelte neutre |
 | ✏️ **Editor Hint** | Personalizza il testo hint accanto a ogni scelta (es. `rel_alice +1` → `Alice +1`) |
 | 🖼️ **Gallery Unlocker** | Genera con un click uno script per sbloccare tutta la gallery |
 | 🔍 **Filtri** | Mostra Tutte / Migliori / Neutre / Cattive |
@@ -31,19 +37,11 @@
 
 ---
 
-## 🖥️ Screenshot
-
-**GUI:**
-
-<p align="center">
-  <img src="gui.png" alt="WTForge GUI" width="800">
-</p>
-
 **Scelte in gioco con colore e hint:**
 
 ```
-{color=#00b894}La mia ragazza.{/color}  {color=#aaaaaa}(Alice +1){/color}
-{color=#d63031}Un'amica.{/color}        {color=#aaaaaa}(Alice -1){/color}
+{color=#4f728f}La mia ragazza.{/color}  {color=#adaead}(Alice +1){/color}
+{color=#d63031}Un'amica.{/color}        {color=#adaead}(Alice -1){/color}
 ```
 
 ---

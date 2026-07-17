@@ -167,7 +167,7 @@ class RenPyWTTool:
         self.root.minsize(900, 600)
 
         # Icona finestra
-        _icon_path = Path(__file__).parent / "logo_256.png"
+        _icon_path = Path(__file__).parent / "img" / "logo_256.png"
         if _icon_path.exists():
             from PIL import ImageTk
             self._tk_icon = ImageTk.PhotoImage(Image.open(_icon_path))
@@ -221,7 +221,7 @@ class RenPyWTTool:
         frame.grid_columnconfigure(1, weight=1)
 
         # Logo
-        logo_path = Path(__file__).parent / "logo_48.png"
+        logo_path = Path(__file__).parent / "img" / "logo_48.png"
         if logo_path.exists():
             pil_img = Image.open(logo_path)
             ctk_logo = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(48, 48))
@@ -325,9 +325,9 @@ class RenPyWTTool:
                         fieldbackground="#2b2b2b", rowheight=24,
                         borderwidth=0)
         style.configure("Dark.Treeview.Heading",
-                        background="#1f1f1f", foreground="#aaaaaa",
+                        background="#1f1f1f", foreground="#adaead",
                         relief="flat")
-        style.map("Dark.Treeview", background=[("selected", "#1f538d")])
+        style.map("Dark.Treeview", background=[("selected", "#4f728f")])
 
         self.choices_list = ttk.Treeview(tree_frame, columns=('text', 'score', 'file'),
                                           show='headings', style="Dark.Treeview")
@@ -361,6 +361,7 @@ class RenPyWTTool:
         ctk.CTkEntry(hint_row, textvariable=self.choice_edit_var,
                      placeholder_text="hint text...").grid(row=0, column=0, sticky="ew", padx=(0, 6))
         ctk.CTkButton(hint_row, text=self.t('save_choice'), width=90,
+                      fg_color="#4f728f", hover_color="#3e5c75",
                       command=self.save_choice_edit).grid(row=0, column=1)
 
         # Dettagli
@@ -381,17 +382,20 @@ class RenPyWTTool:
         frame.grid(row=3, column=0, sticky="ew", padx=12, pady=(4, 12))
 
         btn_cfg = dict(height=32, corner_radius=6)
-        ctk.CTkButton(frame, text=self.t('analyze_game'), command=self.analyze_game, **btn_cfg).pack(side="left", padx=6, pady=8)
+        ctk.CTkButton(frame, text=self.t('analyze_game'), command=self.analyze_game,
+                      fg_color="#4f728f", hover_color="#3e5c75", **btn_cfg).pack(side="left", padx=6, pady=8)
         ctk.CTkButton(frame, text=self.t('generate_mod'), command=self.generate_mod,
-                      fg_color="#00b894", hover_color="#019874", **btn_cfg).pack(side="left", padx=4, pady=8)
+                      fg_color="#4f728f", hover_color="#3e5c75", **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('gallery_unlocker'), command=self.generate_gallery_unlocker,
-                      fg_color="#6c5ce7", hover_color="#5a4dcc", **btn_cfg).pack(side="left", padx=4, pady=8)
+                      fg_color="#5c6d7d", hover_color="#4a5966", **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('dev_tools'), command=self.generate_devtools,
-                      fg_color="#fd79a8", hover_color="#e0678f", **btn_cfg).pack(side="left", padx=4, pady=8)
+                      fg_color="#6f7d8a", hover_color="#5e6b75", **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('export_mod'), command=self.export_mod,
-                      fg_color="#e17055", hover_color="#c0604a", **btn_cfg).pack(side="left", padx=4, pady=8)
-        ctk.CTkButton(frame, text=self.t('save_config'), command=self.save_config, **btn_cfg).pack(side="left", padx=4, pady=8)
-        ctk.CTkButton(frame, text=self.t('load_config'), command=self.load_config, **btn_cfg).pack(side="left", padx=4, pady=8)
+                      fg_color="#464e5a", hover_color="#353d47", **btn_cfg).pack(side="left", padx=4, pady=8)
+        ctk.CTkButton(frame, text=self.t('save_config'), command=self.save_config,
+                      fg_color="#5c6d7d", hover_color="#4a5966", **btn_cfg).pack(side="left", padx=4, pady=8)
+        ctk.CTkButton(frame, text=self.t('load_config'), command=self.load_config,
+                      fg_color="#5c6d7d", hover_color="#4a5966", **btn_cfg).pack(side="left", padx=4, pady=8)
 
         lang_text = "IT" if self.current_lang == 'en' else "EN"
         ctk.CTkButton(frame, text=lang_text, width=48, command=self.change_language,
@@ -402,14 +406,14 @@ class RenPyWTTool:
         if path:
             self.game_path_var.set(path)
             self.game_path = Path(path)
-            self.status_label.configure(text=self.t('game_selected', self.game_path.name), text_color="#00b894")
+            self.status_label.configure(text=self.t('game_selected', self.game_path.name), text_color="#4f728f")
 
     def browse_folder(self):
         path = filedialog.askdirectory(title=self.t('select_folder'))
         if path:
             self.game_path_var.set(path)
             self.game_path = Path(path)
-            self.status_label.configure(text=self.t('game_selected', self.game_path.name), text_color="#00b894")
+            self.status_label.configure(text=self.t('game_selected', self.game_path.name), text_color="#4f728f")
             
     def log(self, message):
         self.log_text.configure(state="normal")

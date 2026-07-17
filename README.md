@@ -1,8 +1,6 @@
 # 🎮 Ren'Py WTForge
 
-<p align="center">
-  <img src="logo_512.png" alt="Ren'Py WTForge Logo" width="160">
-</p>
+![Ren'Py WTForge Logo](img/logo_512.png)
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
@@ -14,6 +12,14 @@
 
 ---
 
+## 🖥️ Screenshot
+
+**GUI:**
+
+![WTForge GUI](img/gui.png)
+
+---
+
 ## ✨ Features
 
 | Feature | Description |
@@ -21,7 +27,7 @@
 | 📦 **Auto Extraction** | Extracts `.rpa` archives using rpatool |
 | 🔓 **Decompilation** | Decompiles `.rpyc` files using unrpyc |
 | 🧠 **Smart Analysis** | Detects choices with numeric scores, booleans (`True`/`False`), and function calls (`change_relationship("alice", 1)`) |
-| 🎨 **Color Coding** | 🟢 Best choices, 🔴 Bad choices, 🔵 Neutral choices |
+| 🎨 **Color Coding** | � Best choices, � Bad choices, ⬜ Neutral choices |
 | ✏️ **Hint Text Editor** | Customize the hint shown next to each choice (e.g. `rel_alice +1` → `Alice +1`) |
 | 🖼️ **Gallery Unlocker** | One-click generator for a universal gallery unlock script |
 | 🔍 **Filters** | Show All / Best / Neutral / Bad choices |
@@ -29,21 +35,12 @@
 | 💾 **Save/Load Config** | Save your custom hints and reuse them across sessions |
 | 🌐 **EN / IT UI** | Switch between English and Italian interface |
 
----
-
-## 🖥️ Screenshots
-
-**GUI:**
-
-<p align="center">
-  <img src="gui.png" alt="WTForge GUI" width="800">
-</p>
 
 **In-game choices with color and hint label:**
 
 ```
-{color=#00b894}My girlfriend.{/color}  {color=#aaaaaa}(Alice +1){/color}
-{color=#d63031}A friend.{/color}       {color=#aaaaaa}(Alice -1){/color}
+{color=#4f728f}My girlfriend.{/color}  {color=#adaead}(Alice +1){/color}
+{color=#d63031}A friend.{/color}       {color=#adaead}(Alice -1){/color}
 ```
 
 ---

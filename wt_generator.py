@@ -31,9 +31,9 @@ class WTGenerator:
             self.output_dir = self.game_path / "game" / "wtmod"
         
         # Colori
-        self.color_positive = '#00b894'  # verde
+        self.color_positive = '#4f728f'  # blu-grigio
         self.color_negative = '#d63031'  # rosso
-        self.color_neutral = '#0984e3'   # blu
+        self.color_neutral = '#86878a'   # grigio
         
     def get_color(self, total_score):
         """Restituisce il colore in base al punteggio"""
@@ -164,7 +164,7 @@ screen choice(items):
     vbox:
         for i in items:
             $ _d = wtmod_hints.get(i.caption, (None, None))
-            $ _lbl = ("{{color=" + _d[0] + "}}" + i.caption + "{{/color}}" + ("  {{color=#aaaaaa}}{{size=-8}}(" + _d[1] + "){{/size}}{{/color}}" if _d[1] else "")) if _d[0] else i.caption
+            $ _lbl = ("{{color=" + _d[0] + "}}" + i.caption + "{{/color}}" + ("  {{color=#adaead}}{{size=-8}}(" + _d[1] + "){{/size}}{{/color}}" if _d[1] else "")) if _d[0] else i.caption
             textbutton _lbl action i.action
 '''
         return mod_content
