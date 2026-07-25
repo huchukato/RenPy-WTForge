@@ -100,7 +100,16 @@ TRANSLATIONS = {
         'dev_tools_error': "Error generating Dev Tools: {}",
         'manual_edits_saved': "Manual edits saved: {}",
         'manual_edits_loaded': "Loaded {} manual edits",
-        'manual_edits_load_error': "Error loading manual edits: {}"
+        'manual_edits_load_error': "Error loading manual edits: {}",
+        'replace_all': "Replace All",
+        'replace_all_title': "Replace in hints",
+        'find': "Find",
+        'replace': "Replace with",
+        'case_sensitive': "Case sensitive",
+        'replace_scope_all': "All choices",
+        'replace_scope_filtered': "Filtered choices only",
+        'replace_count': "Replaced {} hints",
+        'cancel': "Cancel"
     },
     'it': {
         'title': "Ren'Py WTForge",
@@ -181,7 +190,16 @@ TRANSLATIONS = {
         'dev_tools_error': "Errore generazione Dev Tools: {}",
         'manual_edits_saved': "Modifiche manuali salvate: {}",
         'manual_edits_loaded': "Caricate {} modifiche manuali",
-        'manual_edits_load_error': "Errore caricamento modifiche manuali: {}"
+        'manual_edits_load_error': "Errore caricamento modifiche manuali: {}",
+        'replace_all': "Sostituisci tutto",
+        'replace_all_title': "Sostituisci negli hint",
+        'find': "Trova",
+        'replace': "Sostituisci con",
+        'case_sensitive': "Maiuscole/minuscole",
+        'replace_scope_all': "Tutte le scelte",
+        'replace_scope_filtered': "Solo scelte filtrate",
+        'replace_count': "Sostituiti {} hint",
+        'cancel': "Annulla"
     },
     'es': {
         'title': "Ren'Py WTForge",
@@ -262,7 +280,16 @@ TRANSLATIONS = {
         'dev_tools_error': "Error generando herramientas dev: {}",
         'manual_edits_saved': "Ediciones manuales guardadas: {}",
         'manual_edits_loaded': "Cargadas {} ediciones manuales",
-        'manual_edits_load_error': "Error al cargar ediciones manuales: {}"
+        'manual_edits_load_error': "Error al cargar ediciones manuales: {}",
+        'replace_all': "Reemplazar todo",
+        'replace_all_title': "Reemplazar en pistas",
+        'find': "Buscar",
+        'replace': "Reemplazar con",
+        'case_sensitive': "Distinguir mayúsculas",
+        'replace_scope_all': "Todas las opciones",
+        'replace_scope_filtered': "Solo opciones filtradas",
+        'replace_count': "Reemplazados {} pistas",
+        'cancel': "Cancelar"
     }
 }
 
@@ -434,6 +461,9 @@ class RenPyWTTool:
         self.file_filter_combo = ctk.CTkComboBox(filter_bar, values=[self.t('all_files')], width=180,
                                                  variable=self.file_filter_var, command=self.apply_filter)
         self.file_filter_combo.pack(side="left", padx=4, pady=6)
+        ctk.CTkButton(filter_bar, text=self.t('replace_all'), width=100,
+                      fg_color="#5c6d7d", hover_color="#4a5966",
+                      command=self.open_replace_dialog).pack(side="left", padx=(12, 4), pady=6)
 
         # Split: lista sinistra, dettagli destra
         split = ctk.CTkFrame(parent, corner_radius=0, fg_color="transparent")
@@ -809,7 +839,100 @@ class RenPyWTTool:
             if self.choices_list.exists(str(idx)):
                 self.choices_list.selection_set(str(idx))
             self._save_manual_edits()
-            
+
+    def open_replace_dialog(self):
+        """Apre il dialog per sostituire testo in blocco negli hint"""
+        dialog = ctk.CTkToplevel(self.root)
+        dialog.title(self.t('replace_all_title'))
+        dialog.geometry("420x250")
+        dialog.resizable(False, False)
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        pad = {"padx": 16, "pady": 6}
+        ctk.CTkLabel(dialog, text=self.t('find') + ":").pack(anchor="w", **pad)
+        find_entry = ctk.CTkEntry(dialog, width=380)
+        find_entry.pack(**pad)
+
+        ctk.CTkLabel(dialog, text=self.t('replace') + ":").pack(anchor="w", **pad)
+        replace_entry = ctk.CTkEntry(dialog, width=380)
+        replace_entry.pack(**pad)
+
+        case_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(dialog, text=self.t('case_sensitive'), variable=case_var).pack(anchor="w", **pad)
+
+        scope_var = ctk.StringVar(value="all")
+        ctk.CTkRadioButton(dialog, text=self.t('replace_scope_all'), variable=scope_var,
+                           value="all").pack(anchor="w", **pad)
+        ctk.CTkRadioButton(dialog, text=self.t('replace_scope_filtered'), variable=scope_var,
+                           value="filtered").pack(anchor="w", **pad)
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=12)
+
+        def do_replace():
+            find_text = find_entry.get()
+            replace_text = replace_entry.get()
+            if find_text:
+                self.apply_replace_all(find_text, replace_text, case_var.get(), scope_var.get())
+            dialog.destroy()
+
+        ctk.CTkButton(btn_frame, text=self.t('replace_all'), command=do_replace,
+                      fg_color="#4f728f", hover_color="#3e5c75").pack(side="left", padx=8)
+        ctk.CTkButton(btn_frame, text=self.t('cancel'), command=dialog.destroy,
+                      fg_color="#86878a", hover_color="#6b6c6e").pack(side="left", padx=8)
+
+    def apply_replace_all(self, find_text, replace_text, case_sensitive, scope):
+        """Applica la sostituzione del testo negli hint"""
+        if not self.choices:
+            return
+        if scope == "filtered":
+            indices = [int(iid) for iid in self.choices_list.get_children()]
+        else:
+            indices = range(len(self.choices))
+
+        if case_sensitive:
+            find = find_text
+            new_hint_func = lambda h: h.replace(find, replace_text)
+        else:
+            find = find_text.lower()
+            def new_hint_func(h):
+                out = []
+                i = 0
+                lh = h.lower()
+                flen = len(find)
+                while i < len(h):
+                    pos = lh.find(find, i)
+                    if pos == -1:
+                        out.append(h[i:])
+                        break
+                    out.append(h[i:pos])
+                    out.append(replace_text)
+                    i = pos + flen
+                return "".join(out)
+
+        replaced = 0
+        for idx in indices:
+            choice = self.choices[idx]
+            original = choice.get('hint_text_custom') or choice.get('hint_text', '')
+            if find not in (original if case_sensitive else original.lower()):
+                continue
+            new_hint = new_hint_func(original)
+            if new_hint != original:
+                # Se il nuovo hint è identico a quello auto, non forzare un override manuale
+                if new_hint == choice.get('hint_text', ''):
+                    choice['hint_text_custom'] = None
+                    self.choice_edits.pop(idx, None)
+                else:
+                    choice['hint_text_custom'] = new_hint
+                    self.choice_edits[idx] = new_hint
+                replaced += 1
+
+        if replaced:
+            self.apply_filter()
+            self._save_manual_edits()
+            self.log(self.t('replace_count', replaced))
+
     def on_choice_select(self, event):
         selection = self.choices_list.selection()
         if selection:
