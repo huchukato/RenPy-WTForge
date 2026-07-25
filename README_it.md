@@ -40,8 +40,8 @@
 **Scelte in gioco con colore e hint:**
 
 ```
-{color=#4f728f}La mia ragazza.{/color}  {color=#adaead}(Alice +1){/color}
-{color=#d63031}Un'amica.{/color}        {color=#adaead}(Alice -1){/color}
+{color=#4f728f}La mia ragazza.{/color}  {color=#facc15}(Alice +1){/color}
+{color=#d63031}Un'amica.{/color}        {color=#facc15}(Alice -1){/color}
 ```
 
 ---

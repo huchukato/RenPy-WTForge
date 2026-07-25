@@ -34,6 +34,7 @@ class WTGenerator:
         self.color_positive = '#4f728f'  # blu-grigio
         self.color_negative = '#d63031'  # rosso
         self.color_neutral = '#86878a'   # grigio
+        self.hint_color = '#facc15'      # giallo brillante per hint
         
     def get_color(self, total_score):
         """Restituisce il colore in base al punteggio"""
@@ -188,6 +189,7 @@ class WTGenerator:
 init python:
     wtmod_version = "1.0"
     wtmod_enabled = True
+    wtmod_hint_color = "#facc15"
     # choice_text -> (color, hint_text)
     wtmod_hints = {{
 {entries_str}
@@ -198,7 +200,7 @@ screen choice(items):
     vbox:
         for i in items:
             $ _d = wtmod_hints.get(i.caption, (None, None))
-            $ _lbl = ("{{color=" + _d[0] + "}}" + i.caption + "{{/color}}" + ("  {{color=#adaead}}{{size=-8}}(" + _d[1] + "){{/size}}{{/color}}" if _d[1] else "")) if _d[0] else i.caption
+            $ _lbl = ("{{color=" + _d[0] + "}}" + i.caption + "{{/color}}" + ("  {{color=" + wtmod_hint_color + "}}{{size=-8}}(" + _d[1] + "){{/size}}{{/color}}" if _d[1] else "")) if _d[0] else i.caption
             textbutton _lbl action i.action
 '''
         # Override per eventuali screen di scelta personalizzate (es. choice_custom)
