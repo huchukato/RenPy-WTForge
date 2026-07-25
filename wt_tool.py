@@ -765,7 +765,7 @@ class RenPyWTTool:
         """Restituisce un emoji che rappresenta il colore in-game effettivo"""
         override = choice.get('color_override')
         if override == 'best' or (not override and choice['total_score'] > 0):
-            return '�'
+            return '🔵'
         if override == 'bad' or (not override and choice['total_score'] < 0):
             return '🔴'
         if override == 'none':
