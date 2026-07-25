@@ -8,6 +8,7 @@ from tkinter import filedialog, messagebox
 from pathlib import Path
 import json
 import threading
+from datetime import datetime
 from PIL import Image
 
 from wt_extractor import WTExtractor
@@ -95,7 +96,10 @@ TRANSLATIONS = {
         'dev_tools': "Dev Tools",
         'dev_tools_generated': "Dev Tools enabled!",
         'dev_tools_saved_path': "Dev Tools saved to:\n{}",
-        'dev_tools_error': "Error generating Dev Tools: {}"
+        'dev_tools_error': "Error generating Dev Tools: {}",
+        'manual_edits_saved': "Manual edits saved: {}",
+        'manual_edits_loaded': "Loaded {} manual edits",
+        'manual_edits_load_error': "Error loading manual edits: {}"
     },
     'it': {
         'title': "Ren'Py WTForge",
@@ -172,7 +176,10 @@ TRANSLATIONS = {
         'dev_tools': "Dev Tools",
         'dev_tools_generated': "Dev Tools abilitati!",
         'dev_tools_saved_path': "Dev Tools salvati in:\n{}",
-        'dev_tools_error': "Errore generazione Dev Tools: {}"
+        'dev_tools_error': "Errore generazione Dev Tools: {}",
+        'manual_edits_saved': "Modifiche manuali salvate: {}",
+        'manual_edits_loaded': "Caricate {} modifiche manuali",
+        'manual_edits_load_error': "Errore caricamento modifiche manuali: {}"
     },
     'es': {
         'title': "Ren'Py WTForge",
@@ -249,7 +256,10 @@ TRANSLATIONS = {
         'dev_tools': "Herramientas dev",
         'dev_tools_generated': "Herramientas dev habilitadas",
         'dev_tools_saved_path': "Herramientas dev guardadas en:\n{}",
-        'dev_tools_error': "Error generando herramientas dev: {}"
+        'dev_tools_error': "Error generando herramientas dev: {}",
+        'manual_edits_saved': "Ediciones manuales guardadas: {}",
+        'manual_edits_loaded': "Cargadas {} ediciones manuales",
+        'manual_edits_load_error': "Error al cargar ediciones manuales: {}"
     }
 }
 
@@ -626,6 +636,7 @@ class RenPyWTTool:
         self.progress_label.configure(text=self.t('analysis_complete', len(self.choices), len(self.variables)))
         self.log(self.t('analysis_complete', len(self.choices), len(self.variables)))
         self._populate_file_filter()
+        self._load_manual_edits()
         self.apply_filter()
 
     def _populate_file_filter(self):
@@ -636,6 +647,83 @@ class RenPyWTTool:
         files = sorted(set(Path(c['file']).name for c in self.choices))
         self.file_filter_combo.configure(values=[all_label] + files)
         self.file_filter_var.set(all_label)
+
+    def _get_game_dir(self):
+        """Restituisce la directory game/ del gioco selezionato"""
+        if not self.game_path:
+            return None
+        if self.game_path.suffix == '.app':
+            return self.game_path / "Contents" / "Resources" / "autorun" / "game"
+        return self.game_path / "game"
+
+    def _manual_edits_path(self):
+        """Percorso del file JSON che traccia le modifiche manuali"""
+        game_dir = self._get_game_dir()
+        if not game_dir:
+            return None
+        return game_dir / "wtmod" / "wtforge_edits.json"
+
+    def _save_manual_edits(self):
+        """Salva le modifiche manuali in wtforge_edits.json dentro il gioco"""
+        if not self.game_path or not self.choices:
+            return
+        edits = []
+        for choice in self.choices:
+            if not choice.get('hint_text_custom') and not choice.get('color_override'):
+                continue
+            entry = {
+                'choice_text': choice['choice_text'],
+                'file': Path(choice['file']).name,
+                'line': choice['line'],
+            }
+            if choice.get('hint_text_custom'):
+                entry['hint_text_custom'] = choice['hint_text_custom']
+            if choice.get('color_override'):
+                entry['color_override'] = choice['color_override']
+            entry['timestamp'] = datetime.now().isoformat()
+            edits.append(entry)
+        path = self._manual_edits_path()
+        if not path:
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            'version': '1.0',
+            'game_path': str(self.game_path),
+            'edits': edits
+        }
+        try:
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            self.log(self.t('manual_edits_saved', path))
+        except Exception as e:
+            self.log(self.t('manual_edits_load_error', str(e)))
+
+    def _load_manual_edits(self):
+        """Carica e applica le modifiche manuali da wtforge_edits.json"""
+        if not self.game_path or not self.choices:
+            return
+        path = self._manual_edits_path()
+        if not path or not path.exists():
+            return
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            edits = data.get('edits', [])
+            lookup = {edit['choice_text']: edit for edit in edits}
+            applied = 0
+            for choice in self.choices:
+                edit = lookup.get(choice['choice_text'])
+                if not edit:
+                    continue
+                if 'hint_text_custom' in edit:
+                    choice['hint_text_custom'] = edit['hint_text_custom']
+                if 'color_override' in edit:
+                    choice['color_override'] = edit['color_override']
+                applied += 1
+            if applied:
+                self.log(self.t('manual_edits_loaded', applied))
+        except Exception as e:
+            self.log(self.t('manual_edits_load_error', str(e)))
             
     def apply_filter(self, *args):
         """Applica filtro, ricerca e filtro file alla lista scelte"""
@@ -689,6 +777,7 @@ class RenPyWTTool:
             # Ri-seleziona la riga
             if self.choices_list.exists(str(idx)):
                 self.choices_list.selection_set(str(idx))
+            self._save_manual_edits()
 
     def save_color_override(self, selected):
         """Salva override colore per la scelta selezionata"""
@@ -697,6 +786,7 @@ class RenPyWTTool:
             idx = int(selection[0])
             override_key = self.color_option_map.get(selected)
             self.choices[idx]['color_override'] = override_key
+            self._save_manual_edits()
             
     def on_choice_select(self, event):
         selection = self.choices_list.selection()
