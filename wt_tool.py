@@ -52,6 +52,9 @@ TRANSLATIONS = {
         'color_best': "Best",
         'color_neutral': "Neutral",
         'color_bad': "Bad",
+        'search': "Search",
+        'search_placeholder': "Search choices...",
+        'all_files': "All files",
         'analyze_game': "Analyze Game",
         'generate_mod': "Generate Mod",
         'save_config': "Save Config",
@@ -125,6 +128,9 @@ TRANSLATIONS = {
         'color_best': "Migliore",
         'color_neutral': "Neutro",
         'color_bad': "Cattivo",
+        'search': "Cerca",
+        'search_placeholder': "Cerca scelte...",
+        'all_files': "Tutti i file",
         'analyze_game': "Analizza Gioco",
         'generate_mod': "Genera Mod",
         'save_config': "Salva Config",
@@ -165,6 +171,82 @@ TRANSLATIONS = {
         'dev_tools_generated': "Dev Tools abilitati!",
         'dev_tools_saved_path': "Dev Tools salvati in:\n{}",
         'dev_tools_error': "Errore generazione Dev Tools: {}"
+    },
+    'es': {
+        'title': "Ren'Py WTForge",
+        'game_selection': "Selección de juego",
+        'no_game_selected': "Ningún juego seleccionado",
+        'game_selected': "Juego seleccionado: {}",
+        'app_button': ".app",
+        'folder_button': "Carpeta",
+        'progress': "Progreso",
+        'ready': "Listo",
+        'choices_tab': "Opciones",
+        'log_tab': "Registro",
+        'choices_analyzed': "Opciones analizadas:",
+        'choice': "Opción",
+        'score': "Puntuación",
+        'file': "Archivo",
+        'choice_details': "Detalles de la opción",
+        'filter': "Filtro",
+        'all': "Todas",
+        'best': "Mejores",
+        'neutral': "Neutras",
+        'bad': "Peores",
+        'export_options': "Opciones de exportación",
+        'export_all': "Exportar todas con colores",
+        'export_best': "Exportar solo las mejores",
+        'edit_choice': "Texto de pista",
+        'save_choice': "Guardar pista",
+        'hint_placeholder': "Generado automáticamente. Modifica para personalizar.",
+        'color_label': "Color",
+        'color_auto': "Auto",
+        'color_best': "Mejor",
+        'color_neutral': "Neutral",
+        'color_bad': "Peor",
+        'search': "Buscar",
+        'search_placeholder': "texto opción...",
+        'all_files': "Todos los archivos",
+        'analyze_game': "Analizar juego",
+        'generate_mod': "Generar mod",
+        'save_config': "Guardar config",
+        'load_config': "Cargar config",
+        'language': "Idioma",
+        'select_app': "Seleccionar archivo .app del juego",
+        'select_folder': "Seleccionar directorio del juego Ren'Py",
+        'saved': "Guardado: {} -> {}",
+        'config_saved': "Configuración guardada en: {}",
+        'config_loaded': "Configuración cargada: {} variables",
+        'no_config': "No se encontró configuración",
+        'error': "Error",
+        'select_game_first': "Selecciona un juego primero",
+        'analysis_complete': "Análisis completado: {} opciones, {} variables",
+        'extraction': "Extracción",
+        'decompilation': "Descompilación",
+        'analysis_in_progress': "Análisis en curso...",
+        'mod_generated': "Mod generado correctamente",
+        'mod_generated_path': "Mod generado en game/wtmod/",
+        'mod_saved_path': "Mod guardado en:\n{}",
+        'generation_error': "Error generando mod: {}",
+        'analysis_error': "Error durante el análisis: {}",
+        'no_rpa_found': "No se encontraron archivos .rpa",
+        'no_rpyc_found': "No se encontraron archivos .rpyc para descompilar",
+        'analyzing': "Analizando {} archivos .rpy...",
+        'extracting': "Extrayendo {} archivos .rpa...",
+        'decompiling': "Descompilando {} archivos .rpyc...",
+        'gallery_unlocker': "Desbloquear galería",
+        'gallery_generated': "Gallery Unlocker generado",
+        'gallery_saved_path': "Gallery Unlocker guardado en:\n{}",
+        'gallery_error': "Error generando Gallery Unlocker: {}",
+        'export_mod': "Exportar mod",
+        'export_mod_title': "Elige carpeta destino para '{}'",
+        'export_mod_done': "Mod exportado a:\n{}",
+        'export_mod_error': "Error de exportación: {}",
+        'no_mod_to_export': "Genera primero la mod antes de exportarla.",
+        'dev_tools': "Herramientas dev",
+        'dev_tools_generated': "Herramientas dev habilitadas",
+        'dev_tools_saved_path': "Herramientas dev guardadas en:\n{}",
+        'dev_tools_error': "Error generando herramientas dev: {}"
     }
 }
 
@@ -206,10 +288,21 @@ class RenPyWTTool:
             return text.format(*args)
         return text
 
-    def change_language(self):
-        self.current_lang = 'en' if self.current_lang == 'it' else 'it'
-        self.root.title(self.t('title'))
-        self.refresh_ui()
+    def _lang_options(self):
+        return {"English": "en", "Italiano": "it", "Español": "es"}
+
+    def _lang_name(self, code):
+        for name, c in self._lang_options().items():
+            if c == code:
+                return name
+        return "English"
+
+    def change_language(self, selected=None):
+        new_lang = self._lang_options().get(selected)
+        if new_lang and new_lang != self.current_lang:
+            self.current_lang = new_lang
+            self.root.title(self.t('title'))
+            self.refresh_ui()
 
     def refresh_ui(self):
         for widget in self.root.winfo_children():
@@ -255,6 +348,11 @@ class RenPyWTTool:
         ctk.CTkButton(frame, text=self.t('folder_button'), width=80,
                       command=self.browse_folder).grid(row=1, column=title_col + 2, padx=4, pady=(2, 8))
 
+        self.lang_var = ctk.StringVar(value=self._lang_name(self.current_lang))
+        ctk.CTkOptionMenu(frame, values=list(self._lang_options().keys()), variable=self.lang_var,
+                          command=self.change_language, width=100).grid(
+            row=1, column=title_col + 3, padx=(12, 10), pady=(2, 8), sticky="e")
+
         self.status_label = ctk.CTkLabel(frame, text=self.t('no_game_selected'),
                                           text_color="gray")
         self.status_label.grid(row=2, column=title_col, columnspan=3, padx=12, pady=(0, 8), sticky="w")
@@ -282,7 +380,7 @@ class RenPyWTTool:
         self.setup_log_tab(self.tabview.tab(self.t('log_tab')))
 
     def setup_choices_tab(self, parent):
-        parent.grid_rowconfigure(1, weight=1)
+        parent.grid_rowconfigure(2, weight=1)
         parent.grid_columnconfigure(0, weight=1)
 
         # Barra superiore: filtri + esportazione
@@ -305,9 +403,25 @@ class RenPyWTTool:
         ctk.CTkRadioButton(top_bar, text=self.t('export_best'), variable=self.export_var,
                            value='best', command=self.update_export_mode).pack(side="left", padx=6, pady=6)
 
+        # Barra ricerca e filtro file
+        filter_bar = ctk.CTkFrame(parent, corner_radius=6)
+        filter_bar.grid(row=1, column=0, sticky="ew", pady=(0, 6))
+        ctk.CTkLabel(filter_bar, text=self.t('search') + ":",
+                     font=ctk.CTkFont(weight="bold")).pack(side="left", padx=(10, 4))
+        self.search_var = ctk.StringVar()
+        self.search_var.trace_add("write", lambda *args: self.apply_filter())
+        ctk.CTkEntry(filter_bar, textvariable=self.search_var, width=240,
+                     placeholder_text=self.t('search_placeholder')).pack(side="left", padx=(0, 12), pady=6)
+        ctk.CTkLabel(filter_bar, text=self.t('file') + ":",
+                     font=ctk.CTkFont(weight="bold")).pack(side="left", padx=(10, 4))
+        self.file_filter_var = ctk.StringVar(value=self.t('all_files'))
+        self.file_filter_combo = ctk.CTkComboBox(filter_bar, values=[self.t('all_files')], width=180,
+                                                 variable=self.file_filter_var, command=self.apply_filter)
+        self.file_filter_combo.pack(side="left", padx=4, pady=6)
+
         # Split: lista sinistra, dettagli destra
         split = ctk.CTkFrame(parent, corner_radius=0, fg_color="transparent")
-        split.grid(row=1, column=0, sticky="nsew")
+        split.grid(row=2, column=0, sticky="nsew")
         split.grid_rowconfigure(0, weight=1)
         split.grid_columnconfigure(0, weight=3)
         split.grid_columnconfigure(1, weight=2)
@@ -430,10 +544,6 @@ class RenPyWTTool:
         ctk.CTkButton(frame, text=self.t('load_config'), command=self.load_config,
                       fg_color="#5c6d7d", hover_color="#4a5966", **btn_cfg).pack(side="left", padx=4, pady=8)
 
-        lang_text = "IT" if self.current_lang == 'en' else "EN"
-        ctk.CTkButton(frame, text=lang_text, width=48, command=self.change_language,
-                      fg_color="gray30", hover_color="gray40", **btn_cfg).pack(side="right", padx=8, pady=8)
-        
     def browse_app(self):
         path = filedialog.askopenfilename(title=self.t('select_app'))
         if path:
@@ -511,12 +621,26 @@ class RenPyWTTool:
         self.progress.set(1.0)
         self.progress_label.configure(text=self.t('analysis_complete', len(self.choices), len(self.variables)))
         self.log(self.t('analysis_complete', len(self.choices), len(self.variables)))
+        self._populate_file_filter()
         self.apply_filter()
+
+    def _populate_file_filter(self):
+        """Popola il dropdown dei file dopo l'analisi"""
+        if not hasattr(self, 'file_filter_combo') or not self.choices:
+            return
+        all_label = self.t('all_files')
+        files = sorted(set(Path(c['file']).name for c in self.choices))
+        self.file_filter_combo.configure(values=[all_label] + files)
+        self.file_filter_var.set(all_label)
             
-    def apply_filter(self):
-        """Applica filtro alla lista scelte"""
+    def apply_filter(self, *args):
+        """Applica filtro, ricerca e filtro file alla lista scelte"""
         self.filter_mode = self.filter_var.get()
         self.choices_list.delete(*self.choices_list.get_children())
+        
+        search_text = self.search_var.get().lower() if hasattr(self, 'search_var') else ''
+        selected_file = self.file_filter_var.get() if hasattr(self, 'file_filter_var') else self.t('all_files')
+        all_files_label = self.t('all_files')
         
         for idx, choice in enumerate(self.choices):
             score = choice['total_score']
@@ -527,12 +651,22 @@ class RenPyWTTool:
             elif self.filter_mode == 'bad' and score >= 0:
                 continue
             
+            if search_text:
+                choice_text = choice['choice_text'].lower()
+                hint = choice.get('hint_text_custom') or choice.get('hint_text', '')
+                if search_text not in choice_text and search_text not in hint.lower():
+                    continue
+            
+            file_name = Path(choice['file']).name
+            if selected_file != all_files_label and selected_file != file_name:
+                continue
+            
             hint = choice.get('hint_text_custom') or choice.get('hint_text', '')
             display_text = f"{choice['choice_text'][:40]}  ({hint})" if hint else choice['choice_text'][:50]
             self.choices_list.insert('', 'end', iid=str(idx), values=(
                 display_text,
                 score,
-                Path(choice['file']).name
+                file_name
             ))
     
     def update_export_mode(self):
