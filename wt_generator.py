@@ -161,8 +161,16 @@ class WTGenerator:
                 entries.append(f'    "{safe_t}": ("{color}", "{safe_h}"),')
 
         for choice in choices:
-            color = self.get_override_color(choice['color_override']) if choice.get('color_override') else self.get_color(choice['total_score'])
-            hint = self.get_hint_for_choice(choice)
+            if choice.get('color_override') == 'none':
+                # Lascia la scelta esattamente come nel gioco originale
+                color = ''
+                hint = ''
+            elif choice.get('color_override'):
+                color = self.get_override_color(choice['color_override'])
+                hint = self.get_hint_for_choice(choice)
+            else:
+                color = self.get_color(choice['total_score'])
+                hint = self.get_hint_for_choice(choice)
             raw_text = choice['choice_text'].strip('"').strip("'")
             # Rimuovi condizione if ... residua (es. testo" if var == False)
             if '" if ' in raw_text:

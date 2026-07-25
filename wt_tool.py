@@ -52,6 +52,7 @@ TRANSLATIONS = {
         'color_best': "Best",
         'color_neutral': "Neutral",
         'color_bad': "Bad",
+        'color_none': "None",
         'search': "Search",
         'search_placeholder': "Search choices...",
         'all_files': "All files",
@@ -128,6 +129,7 @@ TRANSLATIONS = {
         'color_best': "Migliore",
         'color_neutral': "Neutro",
         'color_bad': "Cattivo",
+        'color_none': "Nessuno",
         'search': "Cerca",
         'search_placeholder': "Cerca scelte...",
         'all_files': "Tutti i file",
@@ -204,6 +206,7 @@ TRANSLATIONS = {
         'color_best': "Mejor",
         'color_neutral': "Neutral",
         'color_bad': "Peor",
+        'color_none': "Ninguno",
         'search': "Buscar",
         'search_placeholder': "texto opción...",
         'all_files': "Todos los archivos",
@@ -485,7 +488,8 @@ class RenPyWTTool:
             self.t('color_auto'): None,
             self.t('color_best'): 'best',
             self.t('color_neutral'): 'neutral',
-            self.t('color_bad'): 'bad'
+            self.t('color_bad'): 'bad',
+            self.t('color_none'): 'none'
         }
         self.color_override_var = ctk.StringVar(value=self.t('color_auto'))
         self.color_menu = ctk.CTkOptionMenu(
