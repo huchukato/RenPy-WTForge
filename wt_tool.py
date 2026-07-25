@@ -47,6 +47,11 @@ TRANSLATIONS = {
         'edit_choice': "Hint Text",
         'save_choice': "Save Hint",
         'hint_placeholder': "Auto-generated from variables. Edit to customize.",
+        'color_label': "Color",
+        'color_auto': "Auto",
+        'color_best': "Best",
+        'color_neutral': "Neutral",
+        'color_bad': "Bad",
         'analyze_game': "Analyze Game",
         'generate_mod': "Generate Mod",
         'save_config': "Save Config",
@@ -115,6 +120,11 @@ TRANSLATIONS = {
         'edit_choice': "Testo Hint",
         'save_choice': "Salva Hint",
         'hint_placeholder': "Generato automaticamente. Modifica per personalizzare.",
+        'color_label': "Colore",
+        'color_auto': "Auto",
+        'color_best': "Migliore",
+        'color_neutral': "Neutro",
+        'color_bad': "Cattivo",
         'analyze_game': "Analizza Gioco",
         'generate_mod': "Genera Mod",
         'save_config': "Salva Config",
@@ -347,14 +357,37 @@ class RenPyWTTool:
         # --- Pannello destra: hint editor + dettagli ---
         right_panel = ctk.CTkFrame(split, corner_radius=6)
         right_panel.grid(row=0, column=1, sticky="nsew")
-        right_panel.grid_rowconfigure(1, weight=1)
+        right_panel.grid_rowconfigure(2, weight=1)
         right_panel.grid_columnconfigure(0, weight=1)
+
+        # Color override
+        color_row = ctk.CTkFrame(right_panel, corner_radius=0, fg_color="transparent")
+        color_row.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 0))
+        color_row.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(color_row, text=self.t('color_label') + ":",
+                     font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, padx=(0, 6))
+        self.color_option_map = {
+            self.t('color_auto'): None,
+            self.t('color_best'): 'best',
+            self.t('color_neutral'): 'neutral',
+            self.t('color_bad'): 'bad'
+        }
+        self.color_override_var = ctk.StringVar(value=self.t('color_auto'))
+        self.color_menu = ctk.CTkOptionMenu(
+            color_row,
+            width=140,
+            values=list(self.color_option_map.keys()),
+            variable=self.color_override_var,
+            command=self.save_color_override
+        )
+        self.color_menu.grid(row=0, column=1, sticky="w")
 
         # Editor hint
         ctk.CTkLabel(right_panel, text=self.t('edit_choice'),
-                     font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, sticky="w", padx=10, pady=(10, 2))
+                     font=ctk.CTkFont(weight="bold")).grid(row=1, column=0, sticky="w", padx=10, pady=(10, 2))
         hint_row = ctk.CTkFrame(right_panel, corner_radius=0, fg_color="transparent")
-        hint_row.grid(row=0, column=0, sticky="ew", padx=10, pady=(28, 0))
+        hint_row.grid(row=1, column=0, sticky="ew", padx=10, pady=(28, 0))
         hint_row.grid_columnconfigure(0, weight=1)
 
         self.choice_edit_var = ctk.StringVar()
@@ -366,10 +399,10 @@ class RenPyWTTool:
 
         # Dettagli
         ctk.CTkLabel(right_panel, text=self.t('choice_details'),
-                     font=ctk.CTkFont(weight="bold")).grid(row=1, column=0, sticky="w", padx=10, pady=(10, 2))
+                     font=ctk.CTkFont(weight="bold")).grid(row=2, column=0, sticky="w", padx=10, pady=(10, 2))
         self.choice_details_text = ctk.CTkTextbox(right_panel, state="disabled",
                                                    font=ctk.CTkFont(family="monospace", size=12))
-        self.choice_details_text.grid(row=1, column=0, sticky="nsew", padx=10, pady=(30, 10))
+        self.choice_details_text.grid(row=2, column=0, sticky="nsew", padx=10, pady=(30, 10))
 
     def setup_log_tab(self, parent):
         parent.grid_rowconfigure(0, weight=1)
@@ -518,6 +551,14 @@ class RenPyWTTool:
             # Ri-seleziona la riga
             if self.choices_list.exists(str(idx)):
                 self.choices_list.selection_set(str(idx))
+
+    def save_color_override(self, selected):
+        """Salva override colore per la scelta selezionata"""
+        selection = self.choices_list.selection()
+        if selection:
+            idx = int(selection[0])
+            override_key = self.color_option_map.get(selected)
+            self.choices[idx]['color_override'] = override_key
             
     def on_choice_select(self, event):
         selection = self.choices_list.selection()
@@ -526,8 +567,20 @@ class RenPyWTTool:
             choice = self.choices[idx]
             current_hint = choice.get('hint_text_custom') or choice.get('hint_text', '')
             self.choice_edit_var.set(current_hint)
+
+            # Imposta dropdown override colore
+            override_key = choice.get('color_override')
+            selected_label = self.t('color_auto')
+            for label, key in self.color_option_map.items():
+                if key == override_key:
+                    selected_label = label
+                    break
+            self.color_override_var.set(selected_label)
+
             details = f"Choice: {choice['choice_text']}\n"
             details += f"Score: {choice['total_score']}\n"
+            if choice.get('color_override'):
+                details += f"Color override: {choice['color_override']}\n"
             details += f"Hint (auto): {choice.get('hint_text', '')}\n"
             if choice.get('hint_text_custom'):
                 details += f"Hint (custom): {choice['hint_text_custom']}\n"
@@ -630,8 +683,15 @@ class RenPyWTTool:
             if choice.get('hint_text_custom'):
                 hint_edits[choice['choice_text']] = choice['hint_text_custom']
         
+        # Salva override colore
+        color_edits = {}
+        for idx, choice in enumerate(self.choices):
+            if choice.get('color_override'):
+                color_edits[choice['choice_text']] = choice['color_override']
+        
         config = {
             'hint_edits': hint_edits,
+            'color_edits': color_edits,
             'export_mode': self.export_mode
         }
         
@@ -660,6 +720,13 @@ class RenPyWTTool:
             ct = choice['choice_text']
             if ct in hint_edits:
                 choice['hint_text_custom'] = hint_edits[ct]
+        
+        # Applica override colore
+        color_edits = config.get('color_edits', {})
+        for choice in self.choices:
+            ct = choice['choice_text']
+            if ct in color_edits:
+                choice['color_override'] = color_edits[ct]
         
         self.apply_filter()
         messagebox.showinfo("Loaded", self.t('config_loaded', len(hint_edits)))

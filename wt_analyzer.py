@@ -348,7 +348,8 @@ class WTAnalyzer:
                     'total_score': score,
                     'is_best': score > 0,
                     'hint_text': hint_text,
-                    'hint_text_custom': None
+                    'hint_text_custom': None,
+                    'color_override': None
                 }
                 self.choices.append(choice_data)
     

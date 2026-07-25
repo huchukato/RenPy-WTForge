@@ -44,6 +44,16 @@ class WTGenerator:
         else:
             return self.color_neutral
     
+    def get_override_color(self, override):
+        """Restituisce il colore per override manuale"""
+        if override == 'best':
+            return self.color_positive
+        elif override == 'bad':
+            return self.color_negative
+        elif override == 'neutral':
+            return self.color_neutral
+        return self.get_color(0)
+    
     def filter_choices(self, choices):
         """Filtra le scelte in base alla modalità di esportazione"""
         if self.export_mode == 'best':
@@ -151,7 +161,7 @@ class WTGenerator:
                 entries.append(f'    "{safe_t}": ("{color}", "{safe_h}"),')
 
         for choice in choices:
-            color = self.get_color(choice['total_score'])
+            color = self.get_override_color(choice['color_override']) if choice.get('color_override') else self.get_color(choice['total_score'])
             hint = self.get_hint_for_choice(choice)
             raw_text = choice['choice_text'].strip('"').strip("'")
             # Rimuovi condizione if ... residua (es. testo" if var == False)
