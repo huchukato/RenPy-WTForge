@@ -169,6 +169,10 @@ class WTGenerator:
             elif choice.get('color_override'):
                 color = self.get_override_color(choice['color_override'])
                 hint = self.get_hint_for_choice(choice)
+            elif choice['total_score'] == 0:
+                # Scelte neutre senza override: lascia colore originale del gioco
+                color = ''
+                hint = ''
             else:
                 color = self.get_color(choice['total_score'])
                 hint = self.get_hint_for_choice(choice)

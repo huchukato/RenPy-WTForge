@@ -499,15 +499,18 @@ class RenPyWTTool:
                         relief="flat")
         style.map("Dark.Treeview", background=[("selected", "#4f728f")])
 
-        self.choices_list = ttk.Treeview(tree_frame, columns=('text', 'score', 'file'),
+        self.choices_list = ttk.Treeview(tree_frame, columns=('color', 'text', 'score', 'file', 'manual'),
                                           show='headings', style="Dark.Treeview")
-        self.choices_list.tag_configure('manual', foreground='#facc15')
+        self.choices_list.heading('color', text='')
         self.choices_list.heading('text', text=self.t('choice'))
         self.choices_list.heading('score', text=self.t('score'))
         self.choices_list.heading('file', text=self.t('file'))
+        self.choices_list.heading('manual', text='')
+        self.choices_list.column('color', width=30, anchor="center", minwidth=30, stretch=False)
         self.choices_list.column('text', width=380, minwidth=200)
         self.choices_list.column('score', width=60, anchor="center")
         self.choices_list.column('file', width=140)
+        self.choices_list.column('manual', width=30, anchor="center", minwidth=30, stretch=False)
 
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.choices_list.yview)
         self.choices_list.configure(yscrollcommand=vsb.set)
@@ -758,6 +761,18 @@ class RenPyWTTool:
         except Exception as e:
             self.log(self.t('manual_edits_load_error', str(e)))
             
+    def _get_color_emoji(self, choice):
+        """Restituisce un emoji che rappresenta il colore in-game effettivo"""
+        override = choice.get('color_override')
+        if override == 'best' or (not override and choice['total_score'] > 0):
+            return '🔵'
+        if override == 'bad' or (not override and choice['total_score'] < 0):
+            return '🔴'
+        if override == 'none':
+            return '➖'
+        # neutral / no override / score 0 -> colore originale del gioco
+        return '⚪'
+
     def apply_filter(self, *args):
         """Applica filtro, ricerca e filtro file alla lista scelte"""
         self.filter_mode = self.filter_var.get()
@@ -788,12 +803,15 @@ class RenPyWTTool:
             
             hint = choice.get('hint_text_custom') or choice.get('hint_text', '')
             display_text = f"{choice['choice_text'][:40]}  ({hint})" if hint else choice['choice_text'][:50]
-            manual = bool(choice.get('hint_text_custom') or choice.get('color_override'))
+            color_emoji = self._get_color_emoji(choice)
+            manual_symbol = '✏' if bool(choice.get('hint_text_custom') or choice.get('color_override')) else ''
             self.choices_list.insert('', 'end', iid=str(idx), values=(
+                color_emoji,
                 display_text,
                 score,
-                file_name
-            ), tags=('manual',) if manual else ())
+                file_name,
+                manual_symbol
+            ))
     
     def update_export_mode(self):
         """Aggiorna modalità esportazione"""
