@@ -77,6 +77,22 @@ class WTGenerator:
             return self.game_path / "Contents" / "Resources" / "autorun" / "game"
         return self.game_path / "game"
 
+    def find_custom_choice_screens(self):
+        """Cerca nel gioco menu che usano screen personalizzate (es. menu(screen='choice_custom'))"""
+        screens = set()
+        game_dir = self.get_game_dir()
+        pattern = re.compile(r'menu\s*\(\s*screen\s*=\s*["\']([^"\']+)["\']\s*\)')
+        for rpy_file in game_dir.rglob('*.rpy'):
+            try:
+                with open(rpy_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line in f:
+                        m = pattern.search(line)
+                        if m:
+                            screens.add(m.group(1))
+            except Exception:
+                pass
+        return screens
+
     def load_tl_translations(self):
         """Legge tutti i file tl/ e restituisce {original: [translated, ...]} per le scelte menu"""
         tl_dir = self.get_game_dir() / "tl"
@@ -166,6 +182,17 @@ screen choice(items):
             $ _d = wtmod_hints.get(i.caption, (None, None))
             $ _lbl = ("{{color=" + _d[0] + "}}" + i.caption + "{{/color}}" + ("  {{color=#adaead}}{{size=-8}}(" + _d[1] + "){{/size}}{{/color}}" if _d[1] else "")) if _d[0] else i.caption
             textbutton _lbl action i.action
+'''
+        # Override per eventuali screen di scelta personalizzate (es. choice_custom)
+        custom_screens = self.find_custom_choice_screens()
+        for name in sorted(custom_screens):
+            if name == 'choice':
+                continue
+            mod_content += f'''
+screen {name}(items):
+    tag menu
+    modal True
+    use choice(items)
 '''
         return mod_content
 
