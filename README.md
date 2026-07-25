@@ -7,6 +7,7 @@
 ![License](https://img.shields.io/badge/License-As--Is-orange)
 ![GUI](https://img.shields.io/badge/GUI-customtkinter-green)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 
 > A universal GUI tool to automatically generate **walkthrough mods** for Ren'Py games — with color-coded choices, custom hint labels, and a gallery unlocker. No coding required.
 
@@ -29,11 +30,13 @@
 | 🧠 **Smart Analysis** | Detects choices with numeric scores, booleans (`True`/`False`), and function calls (`change_relationship("alice", 1)`) |
 | 🎨 **Color Coding** | 🟦 Best choices, 🟥 Bad choices, ⬜ Neutral choices |
 | ✏️ **Hint Text Editor** | Customize the hint shown next to each choice (e.g. `rel_alice +1` → `Alice +1`) |
+| 🎨 **Manual Color Override** | Override the automatic color per choice: Best / Neutral / Bad / None |
 | 🖼️ **Gallery Unlocker** | One-click generator for a universal gallery unlock script |
-| 🔍 **Filters** | Show All / Best / Neutral / Bad choices |
+| 🔍 **Filters + Search** | Show All / Best / Neutral / Bad, search by text, and filter by source `.rpy` file |
 | 📤 **Export Modes** | Export all choices with colors OR only the best ones |
-| 💾 **Save/Load Config** | Save your custom hints and reuse them across sessions |
-| 🌐 **EN / IT UI** | Switch between English and Italian interface |
+| 💾 **Per-Game Edits JSON** | Manual hint/color edits are auto-saved inside the game as `wtforge_edits.json` |
+| 🌐 **EN / IT / ES UI** | Switch between English, Italian, and Spanish interface |
+| 🔄 **Reset Hint** | One-click restore of the original auto-generated hint |
 
 
 **In-game choices with color and hint label:**
