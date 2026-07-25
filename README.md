@@ -42,7 +42,7 @@
 **In-game choices with color and hint label:**
 
 ```
-{color=#4f728f}My girlfriend.{/color}  {color=#facc15}(Alice +1){/color}
+{color=#22c55e}My girlfriend.{/color}  {color=#facc15}(Alice +1){/color}
 {color=#d63031}A friend.{/color}       {color=#facc15}(Alice -1){/color}
 ```
 

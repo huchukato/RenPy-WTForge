@@ -31,7 +31,7 @@ class WTGenerator:
             self.output_dir = self.game_path / "game" / "wtmod"
         
         # Colori
-        self.color_positive = '#4f728f'  # blu-grigio
+        self.color_positive = '#22c55e'  # verde
         self.color_negative = '#d63031'  # rosso
         self.color_neutral = '#86878a'   # grigio
         self.hint_color = '#facc15'      # giallo brillante per hint
