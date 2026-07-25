@@ -47,6 +47,7 @@ TRANSLATIONS = {
         'export_best': "Export only best",
         'edit_choice': "Hint Text",
         'save_choice': "Save Hint",
+        'reset_choice': "Reset",
         'hint_placeholder': "Auto-generated from variables. Edit to customize.",
         'color_label': "Color",
         'color_auto': "Auto",
@@ -127,6 +128,7 @@ TRANSLATIONS = {
         'export_best': "Esporta solo migliori",
         'edit_choice': "Testo Hint",
         'save_choice': "Salva Hint",
+        'reset_choice': "Ripristina",
         'hint_placeholder': "Generato automaticamente. Modifica per personalizzare.",
         'color_label': "Colore",
         'color_auto': "Auto",
@@ -207,6 +209,7 @@ TRANSLATIONS = {
         'export_best': "Exportar solo las mejores",
         'edit_choice': "Texto de pista",
         'save_choice': "Guardar pista",
+        'reset_choice': "Restablecer",
         'hint_placeholder': "Generado automáticamente. Modifica para personalizar.",
         'color_label': "Color",
         'color_auto': "Auto",
@@ -468,6 +471,7 @@ class RenPyWTTool:
 
         self.choices_list = ttk.Treeview(tree_frame, columns=('text', 'score', 'file'),
                                           show='headings', style="Dark.Treeview")
+        self.choices_list.tag_configure('manual', foreground='#facc15')
         self.choices_list.heading('text', text=self.t('choice'))
         self.choices_list.heading('score', text=self.t('score'))
         self.choices_list.heading('file', text=self.t('file'))
@@ -523,7 +527,10 @@ class RenPyWTTool:
                      placeholder_text="hint text...").grid(row=0, column=0, sticky="ew", padx=(0, 6))
         ctk.CTkButton(hint_row, text=self.t('save_choice'), width=90,
                       fg_color="#4f728f", hover_color="#3e5c75",
-                      command=self.save_choice_edit).grid(row=0, column=1)
+                      command=self.save_choice_edit).grid(row=0, column=1, padx=(0, 6))
+        ctk.CTkButton(hint_row, text=self.t('reset_choice'), width=90,
+                      fg_color="#86878a", hover_color="#6b6c6e",
+                      command=self.reset_choice_edit).grid(row=0, column=2)
 
         # Dettagli
         ctk.CTkLabel(right_panel, text=self.t('choice_details'),
@@ -755,11 +762,12 @@ class RenPyWTTool:
             
             hint = choice.get('hint_text_custom') or choice.get('hint_text', '')
             display_text = f"{choice['choice_text'][:40]}  ({hint})" if hint else choice['choice_text'][:50]
+            manual = bool(choice.get('hint_text_custom') or choice.get('color_override'))
             self.choices_list.insert('', 'end', iid=str(idx), values=(
                 display_text,
                 score,
                 file_name
-            ))
+            ), tags=('manual',) if manual else ())
     
     def update_export_mode(self):
         """Aggiorna modalità esportazione"""
@@ -786,6 +794,20 @@ class RenPyWTTool:
             idx = int(selection[0])
             override_key = self.color_option_map.get(selected)
             self.choices[idx]['color_override'] = override_key
+            self._save_manual_edits()
+
+    def reset_choice_edit(self):
+        """Ripristina hint e colore della scelta selezionata ai valori automatici"""
+        selection = self.choices_list.selection()
+        if selection:
+            idx = int(selection[0])
+            self.choices[idx]['hint_text_custom'] = None
+            self.choices[idx]['color_override'] = None
+            self.choice_edit_var.set(self.choices[idx].get('hint_text', ''))
+            self.color_override_var.set(self.t('color_auto'))
+            self.apply_filter()
+            if self.choices_list.exists(str(idx)):
+                self.choices_list.selection_set(str(idx))
             self._save_manual_edits()
             
     def on_choice_select(self, event):
