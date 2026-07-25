@@ -844,10 +844,12 @@ class RenPyWTTool:
         """Apre il dialog per sostituire testo in blocco negli hint"""
         dialog = ctk.CTkToplevel(self.root)
         dialog.title(self.t('replace_all_title'))
-        dialog.geometry("420x250")
-        dialog.resizable(False, False)
+        dialog.geometry("520x420")
+        dialog.minsize(480, 380)
+        dialog.resizable(True, True)
         dialog.transient(self.root)
         dialog.grab_set()
+        dialog.after(100, lambda: (dialog.lift(), dialog.focus_force()))
 
         pad = {"padx": 16, "pady": 6}
         ctk.CTkLabel(dialog, text=self.t('find') + ":").pack(anchor="w", **pad)
