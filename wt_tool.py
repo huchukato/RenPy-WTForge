@@ -590,10 +590,6 @@ class RenPyWTTool:
                       fg_color="#6f7d8a", hover_color="#5e6b75", **btn_cfg).pack(side="left", padx=4, pady=8)
         ctk.CTkButton(frame, text=self.t('export_mod'), command=self.export_mod,
                       fg_color="#464e5a", hover_color="#353d47", **btn_cfg).pack(side="left", padx=4, pady=8)
-        ctk.CTkButton(frame, text=self.t('save_config'), command=self.save_config,
-                      fg_color="#5c6d7d", hover_color="#4a5966", **btn_cfg).pack(side="left", padx=4, pady=8)
-        ctk.CTkButton(frame, text=self.t('load_config'), command=self.load_config,
-                      fg_color="#5c6d7d", hover_color="#4a5966", **btn_cfg).pack(side="left", padx=4, pady=8)
 
     def browse_app(self):
         path = filedialog.askopenfilename(title=self.t('select_app'))
@@ -1046,66 +1042,6 @@ class RenPyWTTool:
             self.log(self.t('export_mod_done', export_dir.parent.parent))
         except Exception as e:
             messagebox.showerror(self.t('error'), self.t('export_mod_error', str(e)))
-
-    def save_config(self):
-        """Salva configurazione"""
-        config_path = Path(__file__).parent / "config" / "choices_config.json"
-        config_path.parent.mkdir(exist_ok=True)
-        
-        # Salva hint_text_custom indicizzati per choice_text (chiave stabile)
-        hint_edits = {}
-        for idx, choice in enumerate(self.choices):
-            if choice.get('hint_text_custom'):
-                hint_edits[choice['choice_text']] = choice['hint_text_custom']
-        
-        # Salva override colore
-        color_edits = {}
-        for idx, choice in enumerate(self.choices):
-            if choice.get('color_override'):
-                color_edits[choice['choice_text']] = choice['color_override']
-        
-        config = {
-            'hint_edits': hint_edits,
-            'color_edits': color_edits,
-            'export_mode': self.export_mode
-        }
-        
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=2, ensure_ascii=False)
-            
-        messagebox.showinfo("Saved", self.t('config_saved', config_path))
-        
-    def load_config(self):
-        """Carica configurazione"""
-        config_path = Path(__file__).parent / "config" / "choices_config.json"
-        
-        if not config_path.exists():
-            messagebox.showwarning("Warning", self.t('no_config'))
-            return
-            
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-        
-        hint_edits = config.get('hint_edits', {})
-        self.export_mode = config.get('export_mode', 'all')
-        self.export_var.set(self.export_mode)
-        
-        # Applica hint_text_custom alle scelte correnti
-        for choice in self.choices:
-            ct = choice['choice_text']
-            if ct in hint_edits:
-                choice['hint_text_custom'] = hint_edits[ct]
-        
-        # Applica override colore
-        color_edits = config.get('color_edits', {})
-        for choice in self.choices:
-            ct = choice['choice_text']
-            if ct in color_edits:
-                choice['color_override'] = color_edits[ct]
-        
-        self.apply_filter()
-        messagebox.showinfo("Loaded", self.t('config_loaded', len(hint_edits)))
-
 
 def main():
     root = ctk.CTk()
