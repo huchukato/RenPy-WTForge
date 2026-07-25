@@ -23,6 +23,7 @@ class WTAnalyzer:
         
         self.blocks_to_check = ['init', 'python']
         self.ifelse = ['if', 'else', 'elif']
+        self._choice_re = re.compile(r"^([\"'])(.*?)\1\s*(?:if\s+[^:#]+)?\s*:\s*(?:#.*)?$")
         self.dont_extract_points_from = ['False', 'True', 'if', 'else', 'elif']
         
         # Colori per evidenziazione
@@ -35,8 +36,8 @@ class WTAnalyzer:
         self.choices = []    # Lista di tutte le scelte trovate
         
     def match_choice(self, line):
-        """Verifica se la linea è una scelta"""
-        return re.compile(r"\".*\".*:").match(line) is not None
+        """Verifica se la linea è una scelta di menu"""
+        return self._choice_re.match(line) is not None
     
     def match_normal_variable(self, line):
         """Verifica se la linea è una variabile normale"""
@@ -230,7 +231,7 @@ class WTAnalyzer:
             exact_line = line.strip()
             cur_ind = len(line) - len(line.lstrip())
             
-            if (exact_line.startswith('"') and self.match_choice(exact_line)) or \
+            if self.match_choice(exact_line) or \
                (exact_line.startswith('label') and exact_line.endswith(':') and cur_ind != ind_to_check) or \
                (any(exact_line.startswith(s) for s in self.blocks_to_check) and exact_line.endswith(':')):
                 break
@@ -279,9 +280,22 @@ class WTAnalyzer:
         except:
             return
         
+        menu_stack = []
         for index, line in enumerate(data):
             exact_line = line.strip()
-            if exact_line.startswith('"') and self.match_choice(exact_line):
+            cur_indent = len(line) - len(line.lstrip())
+            
+            # Track menu blocks
+            if re.match(r'^menu\b.*:$', exact_line):
+                menu_stack.append(cur_indent)
+                continue
+            
+            # Pop menus that have ended (ignore blank/comment lines)
+            while menu_stack and cur_indent <= menu_stack[-1] and exact_line and not exact_line.startswith('#'):
+                menu_stack.pop()
+            
+            # Only consider choice lines inside a menu block
+            if menu_stack and cur_indent > menu_stack[-1] and self.match_choice(exact_line):
                 vars = self.read_until_choice(data[index + 1:], index + 1)
                 if len(vars) and any(vars[-1].startswith(s) for s in self.ifelse):
                     vars.pop()
