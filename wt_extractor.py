@@ -40,6 +40,21 @@ class WTExtractor:
         # Se non trova game, assume che il percorso sia già la directory game
         return self.game_path
     
+    def _rpa_marker(self, rpa_file):
+        """Restituisce il marker usato per ricordare che un .rpa è stato estratto"""
+        return rpa_file.with_suffix('.rpa.extracted')
+
+    def _is_extracted(self, rpa_file):
+        """Controlla se un .rpa è già stato estratto in precedenza"""
+        return self._rpa_marker(rpa_file).exists()
+
+    def _mark_extracted(self, rpa_file):
+        """Crea il marker per un .rpa appena estratto"""
+        try:
+            self._rpa_marker(rpa_file).touch()
+        except Exception:
+            pass
+
     def extract_rpa_files(self, progress_callback=None):
         """
         Estrae tutti i file .rpa nella directory game
@@ -63,24 +78,40 @@ class WTExtractor:
         for i, rpa_file in enumerate(rpa_files):
             if progress_callback:
                 progress_callback(i + 1, len(rpa_files))
-                
+
+            if self._is_extracted(rpa_file):
+                print(f"Già estratto, salto: {rpa_file.name}")
+                try:
+                    rpa_file.unlink()
+                    print(f"Rimosso .rpa già estratto: {rpa_file.name}")
+                except Exception as e:
+                    print(f"Avviso: impossibile rimuovere {rpa_file.name}: {e}")
+                continue
+
             print(f"Estrazione di {rpa_file.name}...")
-            
+
             try:
                 result = subprocess.run(
                     [sys.executable, str(rpatool_path), '-x', str(rpa_file), '-o', str(self.output_dir)],
                     capture_output=True,
                     text=True
                 )
-                
+
                 if result.returncode != 0:
                     print(f"Errore nell'estrazione di {rpa_file.name}: {result.stderr}")
                     return False
-                    
+
             except Exception as e:
                 print(f"Errore durante l'estrazione: {e}")
                 return False
-                
+
+            try:
+                rpa_file.unlink()
+                self._mark_extracted(rpa_file)
+                print(f"Estratto e rimosso: {rpa_file.name}")
+            except Exception as e:
+                print(f"Avviso: impossibile rimuovere {rpa_file.name}: {e}")
+
         print("Estrazione completata")
         return True
     
