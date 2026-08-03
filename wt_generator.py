@@ -275,68 +275,183 @@ init python:
         
         return True
     
-    def generate_gallery_unlocker(self):
+    def generate_gallery_unlocker(self, detection=None):
         """Genera il contenuto del file Gallery Unlocker"""
-        return """# Ren'Py WTForge - Gallery Unlocker
-# Generated automatically. Compatible with most Ren'Py games.
-# Runs at init priority 666 (after all game code).
+        detection = detection or {}
+        lines = [
+            "# Ren'Py WTForge - Gallery Unlocker",
+            "# Generated automatically. Compatible with most Ren'Py games.",
+            "# Runs at init priority 666 (after all game code).",
+            "",
+            "init 666 python:",
+        ]
 
-init 666 python:
-    # Method 1: award_manager-based gallery (used by some games)
-    try:
-        if hasattr(store, 'award_manager') and award_manager is not None:
-            for item in award_manager.awards:
-                try:
-                    renpy.mark_image_seen(item.unlock_str)
-                    item.unlock()
-                except Exception:
-                    pass
-    except Exception:
-        pass
+        # Targeted blocks from detected systems
+        if detection.get('award_manager'):
+            lines.extend([
+                "    # Detected: award_manager",
+                "    try:",
+                "        if hasattr(store, 'award_manager') and award_manager is not None:",
+                "            for item in award_manager.awards:",
+                "                try:",
+                "                    renpy.mark_image_seen(item.unlock_str)",
+                "                    item.unlock()",
+                "                except Exception:",
+                "                    pass",
+                "    except Exception:",
+                "        pass",
+                "",
+            ])
 
-    # Method 2: mark all registered images as seen (universal fallback)
-    try:
-        for img in renpy.list_images():
-            try:
-                renpy.mark_image_seen(img)
-            except Exception:
-                pass
-    except Exception:
-        pass
+        for name in detection.get('gallery_objects', []):
+            lines.extend([
+                f"    # Detected: Gallery object '{name}'",
+                "    try:",
+                f"        _gallery_obj = getattr(store, {name!r}, None)",
+                "        if _gallery_obj is not None:",
+                "            for _btn in getattr(_gallery_obj, 'buttons', []):",
+                "                try:",
+                "                    _gallery_obj.unlock(_btn)",
+                "                except Exception:",
+                "                    pass",
+                "            for _img in getattr(_gallery_obj, 'images', []):",
+                "                try:",
+                "                    _gallery_obj.unlock(_img)",
+                "                    renpy.mark_image_seen(_img)",
+                "                except Exception:",
+                "                    pass",
+                "            for _cond in list(getattr(_gallery_obj, 'conditions', {}).keys()):",
+                "                try:",
+                "                    _gallery_obj.unlock(_cond)",
+                "                except Exception:",
+                "                    pass",
+                "            if hasattr(_gallery_obj, 'unlocked_all'):",
+                "                try:",
+                "                    _gallery_obj.unlocked_all()",
+                "                except Exception:",
+                "                    pass",
+                "    except Exception:",
+                "        pass",
+                "",
+            ])
 
-    # Method 3: unlock all persistent gallery flags if present
-    try:
-        if hasattr(persistent, 'gallery_unlocked'):
-            persistent.gallery_unlocked = True
-    except Exception:
-        pass
+        for var in detection.get('persistent_vars', []):
+            lines.extend(self._generate_persistent_var_block(var))
 
-    # Method 4: pattern ["scene_name", False] - used by many Ren'Py games
-    try:
-        for key in dir(persistent):
-            try:
-                val = getattr(persistent, key)
-                if isinstance(val, list) and len(val) == 2 and isinstance(val[0], str) and isinstance(val[1], bool):
-                    val[1] = True
-            except Exception:
-                pass
-    except Exception:
-        pass
+        # Fallback methods
+        lines.extend(self._gallery_fallback_lines())
+        return "\n".join(lines)
 
-    # Method 5: Gallery object with unlocked attribute
-    try:
-        if hasattr(store, 'gallery') and hasattr(store.gallery, 'unlocked_all'):
-            store.gallery.unlocked_all()
-    except Exception:
-        pass
-"""
+    def _generate_persistent_var_block(self, var):
+        """Genera il blocco di unlock per una variabile persistente rilevata"""
+        name = var['name']
+        shape = var.get('shape', 'unknown')
+        block = [f"    # Detected persistent variable: {name} ({shape})", "    try:"]
+        if shape == 'set':
+            block.extend([
+                f"        _val = getattr(persistent, {name!r}, set())",
+                "        if isinstance(_val, set):",
+                "            _val.update(set(renpy.list_images()))",
+                f"        setattr(persistent, {name!r}, _val)",
+            ])
+        elif shape == 'dict':
+            block.extend([
+                f"        _val = getattr(persistent, {name!r}, {{}})",
+                "        if isinstance(_val, dict):",
+                "            for _k in list(_val.keys()):",
+                "                _val[_k] = True",
+                "            for _img in renpy.list_images():",
+                "                _val[_img] = True",
+                f"        setattr(persistent, {name!r}, _val)",
+            ])
+        elif shape == 'list':
+            block.extend([
+                f"        _val = getattr(persistent, {name!r}, [])",
+                "        if isinstance(_val, list):",
+                "            for _pair in _val:",
+                "                if isinstance(_pair, (list, tuple)) and len(_pair) == 2:",
+                "                    _pair[1] = True",
+                "            for _img in renpy.list_images():",
+                "                if _img not in _val:",
+                "                    _val.append(_img)",
+                f"        setattr(persistent, {name!r}, _val)",
+            ])
+        elif shape == 'bool':
+            block.extend([
+                f"        setattr(persistent, {name!r}, True)",
+            ])
+        else:
+            block.extend([
+                f"        _val = getattr(persistent, {name!r}, None)",
+                "        if isinstance(_val, dict):",
+                "            for _k in list(_val.keys()):",
+                "                _val[_k] = True",
+                "        elif isinstance(_val, set):",
+                "            _val.update(set(renpy.list_images()))",
+                "        elif isinstance(_val, list):",
+                "            for _pair in _val:",
+                "                if isinstance(_pair, (list, tuple)) and len(_pair) == 2:",
+                "                    _pair[1] = True",
+                "        elif isinstance(_val, bool):",
+                f"            setattr(persistent, {name!r}, True)",
+            ])
+        block.extend(["    except Exception:", "        pass", ""])
+        return block
 
-    def export_gallery_unlocker(self):
+    def _gallery_fallback_lines(self):
+        """Restituisce i metodi fallback universali"""
+        return [
+            "    # Fallback methods for unknown gallery systems",
+            "    try:",
+            "        if hasattr(store, 'award_manager') and award_manager is not None:",
+            "            for item in award_manager.awards:",
+            "                try:",
+            "                    renpy.mark_image_seen(item.unlock_str)",
+            "                    item.unlock()",
+            "                except Exception:",
+            "                    pass",
+            "    except Exception:",
+            "        pass",
+            "",
+            "    try:",
+            "        for img in renpy.list_images():",
+            "            try:",
+            "                renpy.mark_image_seen(img)",
+            "            except Exception:",
+            "                pass",
+            "    except Exception:",
+            "        pass",
+            "",
+            "    try:",
+            "        if hasattr(persistent, 'gallery_unlocked'):",
+            "            persistent.gallery_unlocked = True",
+            "    except Exception:",
+            "        pass",
+            "",
+            "    try:",
+            "        for key in dir(persistent):",
+            "            try:",
+            "                val = getattr(persistent, key)",
+            "                if isinstance(val, list) and len(val) == 2 and isinstance(val[0], str) and isinstance(val[1], bool):",
+            "                    val[1] = True",
+            "            except Exception:",
+            "                pass",
+            "    except Exception:",
+            "        pass",
+            "",
+            "    try:",
+            "        if hasattr(store, 'gallery') and hasattr(store.gallery, 'unlocked_all'):",
+            "            store.gallery.unlocked_all()",
+            "    except Exception:",
+            "        pass",
+        ]
+
+    def export_gallery_unlocker(self, detection=None):
         """Scrive il file Gallery Unlocker nella directory di output"""
         self.create_output_directory()
         gallery_path = self.output_dir / "wtmod_gallery.rpy"
         with open(gallery_path, 'w', encoding='utf-8') as f:
-            f.write(self.generate_gallery_unlocker())
+            f.write(self.generate_gallery_unlocker(detection))
         return gallery_path
 
     def generate_devtools(self):

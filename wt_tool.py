@@ -14,6 +14,7 @@ from PIL import Image
 from wt_extractor import WTExtractor
 from wt_analyzer import WTAnalyzer
 from wt_generator import WTGenerator
+from wt_gallery import WTGalleryAnalyzer
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -658,6 +659,12 @@ class RenPyWTTool:
             self.log("Phase 3: Analyzing .rpy files...")
             self.analyzer = WTAnalyzer()
             self.choices, self.variables = self.analyzer.analyze_directory(self.extractor.output_dir)
+
+            # Rilevamento galleria
+            self.log("Phase 4: Detecting gallery system...")
+            self.gallery_analyzer = WTGalleryAnalyzer(self.extractor.output_dir)
+            self.gallery_detection = self.gallery_analyzer.analyze()
+            self.log(f"Gallery detection: {self.gallery_detection}")
             
             # Aggiorna UI
             self.root.after(0, self._update_analysis_ui)
@@ -1005,10 +1012,20 @@ class RenPyWTTool:
         if not self.game_path:
             messagebox.showerror(self.t('error'), self.t('select_game_first'))
             return
-            
+
+        # Se non abbiamo ancora analizzato, proviamo a rilevare il sistema galleria ora
+        if not hasattr(self, 'gallery_detection') or self.gallery_detection is None:
+            if hasattr(self, 'extractor') and self.extractor is not None:
+                self.log("Detecting gallery system on demand...")
+                self.gallery_analyzer = WTGalleryAnalyzer(self.extractor.output_dir)
+                self.gallery_detection = self.gallery_analyzer.analyze()
+                self.log(f"Gallery detection: {self.gallery_detection}")
+            else:
+                self.gallery_detection = None
+
         try:
             self.generator = WTGenerator(self.game_path, self.export_mode)
-            gallery_path = self.generator.export_gallery_unlocker()
+            gallery_path = self.generator.export_gallery_unlocker(self.gallery_detection)
             messagebox.showinfo(self.t('gallery_generated'), self.t('gallery_saved_path', gallery_path))
             self.log(self.t('gallery_saved_path', gallery_path))
         except Exception as e:
