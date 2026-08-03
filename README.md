@@ -31,7 +31,7 @@
 | 🎨 **Color Coding** | 🟦 Best choices, 🟥 Bad choices, ⬜ Neutral choices |
 | ✏️ **Hint Text Editor** | Customize the hint shown next to each choice (e.g. `rel_alice +1` → `Alice +1`) |
 | 🎨 **Manual Color Override** | Override the automatic color per choice: Best / Neutral / Bad / None |
-| 🖼️ **Gallery Unlocker** | One-click generator for a universal gallery unlock script |
+| 🖼️ **Gallery Unlocker** | Auto-detects award_manager / Ren'Py Gallery / persistent CG flags and unlocks all CGs |
 | 🔍 **Filters + Search** | Show All / Best / Neutral / Bad, search by text, and filter by source `.rpy` file |
 | 📤 **Export Modes** | Export all choices with colors OR only the best ones |
 | 💾 **Per-Game Edits JSON** | Manual hint/color edits are auto-saved inside the game as `wtforge_edits.json` |
