@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/Licenza-As--Is-orange)
 ![GUI](https://img.shields.io/badge/GUI-customtkinter-green)
 ![Status](https://img.shields.io/badge/Stato-Attivo-brightgreen)
-![Versione](https://img.shields.io/badge/versione-1.1.0-blue)
+![Versione](https://img.shields.io/badge/versione-1.2.0-blue)
 
 > Uno strumento GUI universale per generare automaticamente **mod walkthrough** per i giochi Ren'Py — con scelte colorate, etichette hint personalizzabili e sblocco gallery. Nessun codice richiesto.
 
@@ -37,6 +37,11 @@
 | 💾 **JSON modifiche per gioco** | Hint e colori manuali vengono auto-salvati dentro il gioco come `wtforge_edits.json` |
 | 🌐 **IT / EN / ES** | Cambio lingua interfaccia: Italiano, Inglese, Spagnolo |
 | 🔄 **Ripristina hint** | Tasto per tornare all'hint automatico originale |
+| 🛤️ **Route rilevate** | Visualizza jump/call per scelta e filtra per route rilevata |
+| ✂️ **Hint concisi** | Gli hint in-game mostrano fino a 3 variabili più rilevanti |
+| 🧩 **Pannello effetti** | Visualizza tutti gli effetti estratti per scelta nel dettaglio GUI |
+| ⚡ **Decompilazione cache** | Salta `.rpyc` se il `.rpy` corrispondente è già più recente |
+| 📈 **Progresso live** | Barra avanzamento aggiornata durante estrazione, decompilazione e analisi |
 
 ---
 

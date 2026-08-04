@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/License-As--Is-orange)
 ![GUI](https://img.shields.io/badge/GUI-customtkinter-green)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 
 > A universal GUI tool to automatically generate **walkthrough mods** for Ren'Py games — with color-coded choices, custom hint labels, and a gallery unlocker. No coding required.
 
@@ -37,6 +37,11 @@
 | 💾 **Per-Game Edits JSON** | Manual hint/color edits are auto-saved inside the game as `wtforge_edits.json` |
 | 🌐 **EN / IT / ES UI** | Switch between English, Italian, and Spanish interface |
 | 🔄 **Reset Hint** | One-click restore of the original auto-generated hint |
+| 🛤️ **Detected Routes** | View jump/call targets per choice and filter by detected route |
+| ✂️ **Concise Hints** | In-game hints show up to the 3 most impactful variables |
+| 🧩 **Effects Panel** | View all extracted effects per choice in the GUI details |
+| ⚡ **Cached Decompilation** | Skips `.rpyc` decompilation when the `.rpy` is already newer |
+| 📈 **Live Progress** | Progress bar updates during extraction, decompilation, and analysis |
 
 
 **In-game choices with color and hint label:**
