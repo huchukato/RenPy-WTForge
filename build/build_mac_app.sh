@@ -22,7 +22,7 @@ mkdir -p "$PROJECT_DST"
 # Copia il progetto nel bundle
 echo "[WTForge Mac] Copying project into bundle..."
 cp -R ".venv" "$PROJECT_DST/.venv"
-cp wt_tool.py wt_analyzer.py wt_generator.py wt_extractor.py "$PROJECT_DST/"
+cp wt_tool.py wt_analyzer.py wt_generator.py wt_extractor.py wt_effects.py wt_gallery.py "$PROJECT_DST/"
 cp start.sh start.bat pyproject.toml README.md README_it.md "$PROJECT_DST/"
 cp -r img "$PROJECT_DST/img"
 cp -r "UnRen Tools" "$PROJECT_DST/UnRen Tools"
