@@ -15,6 +15,7 @@ from wt_extractor import WTExtractor
 from wt_analyzer import WTAnalyzer
 from wt_generator import WTGenerator
 from wt_gallery import WTGalleryAnalyzer
+from wt_effects import WTVariableFilter
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -323,6 +324,12 @@ class RenPyWTTool:
         self.export_mode = 'all'
         self.choice_edits = {}
 
+        # Filtro variabili per route/storia
+        self.variable_filter = WTVariableFilter()
+        self.filter_include_var = ctk.StringVar()
+        self.filter_exclude_var = ctk.StringVar()
+        self.route_name_var = ctk.StringVar()
+
         # Setup UI
         self.setup_ui()
 
@@ -573,6 +580,30 @@ class RenPyWTTool:
                                                    font=ctk.CTkFont(family="monospace", size=12))
         self.choice_details_text.grid(row=2, column=0, sticky="nsew", padx=10, pady=(30, 10))
 
+        # Filtro variabili / route
+        filter_frame = ctk.CTkFrame(right_panel, corner_radius=6)
+        filter_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 10))
+        filter_frame.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(filter_frame, text="Include vars:",
+                     font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, sticky="w", padx=10, pady=(8, 2))
+        ctk.CTkEntry(filter_frame, textvariable=self.filter_include_var,
+                     placeholder_text="elea*, lp_elea*").grid(row=0, column=1, sticky="ew", padx=10, pady=(8, 2))
+        ctk.CTkLabel(filter_frame, text="Exclude vars:",
+                     font=ctk.CTkFont(weight="bold")).grid(row=1, column=0, sticky="w", padx=10, pady=2)
+        ctk.CTkEntry(filter_frame, textvariable=self.filter_exclude_var,
+                     placeholder_text="fiona*, lp_fiona*").grid(row=1, column=1, sticky="ew", padx=10, pady=2)
+        ctk.CTkLabel(filter_frame, text="Route name:",
+                     font=ctk.CTkFont(weight="bold")).grid(row=2, column=0, sticky="w", padx=10, pady=2)
+        ctk.CTkEntry(filter_frame, textvariable=self.route_name_var,
+                     placeholder_text="elea").grid(row=2, column=1, sticky="ew", padx=10, pady=2)
+        ctk.CTkButton(filter_frame, text="Apply filter",
+                      command=self._apply_variable_filter, width=90,
+                      fg_color="#4f728f", hover_color="#3e5c75").grid(row=3, column=0, padx=10, pady=(4, 8), sticky="w")
+        ctk.CTkButton(filter_frame, text="Save filters",
+                      command=self._save_filters, width=90,
+                      fg_color="#5c6d7d", hover_color="#4a5966").grid(row=3, column=1, padx=10, pady=(4, 8), sticky="e")
+
     def setup_log_tab(self, parent):
         parent.grid_rowconfigure(0, weight=1)
         parent.grid_columnconfigure(0, weight=1)
@@ -680,7 +711,8 @@ class RenPyWTTool:
         self.log(self.t('analysis_complete', len(self.choices), len(self.variables)))
         self._populate_file_filter()
         self._load_manual_edits()
-        self.apply_filter()
+        self._load_filters()
+        self._apply_variable_filter()
 
     def _populate_file_filter(self):
         """Popola il dropdown dei file dopo l'analisi"""
@@ -767,13 +799,89 @@ class RenPyWTTool:
                 self.log(self.t('manual_edits_loaded', applied))
         except Exception as e:
             self.log(self.t('manual_edits_load_error', str(e)))
-            
+
+    def _filters_path(self):
+        """Percorso del file JSON con i filtri variabili"""
+        game_dir = self._get_game_dir()
+        if not game_dir:
+            return None
+        return game_dir / "wtmod" / "wtforge_filters.json"
+
+    def _load_filters(self):
+        """Carica i filtri variabili salvati"""
+        if not self.game_path:
+            return
+        path = self._filters_path()
+        if not path or not path.exists():
+            return
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            self.filter_include_var.set(', '.join(data.get('include', [])))
+            self.filter_exclude_var.set(', '.join(data.get('exclude', [])))
+            self.route_name_var.set(data.get('route_name', ''))
+            self.variable_filter = WTVariableFilter.from_dict(data)
+        except Exception as e:
+            self.log(self.t('manual_edits_load_error', str(e)))
+
+    def _save_filters(self):
+        """Salva i filtri variabili in wtforge_filters.json"""
+        if not self.game_path:
+            return
+        path = self._filters_path()
+        if not path:
+            return
+        include = [p.strip() for p in self.filter_include_var.get().split(',') if p.strip()]
+        exclude = [p.strip() for p in self.filter_exclude_var.get().split(',') if p.strip()]
+        data = {
+            'version': '1.0',
+            'include': include,
+            'exclude': exclude,
+            'route_name': self.route_name_var.get().strip(),
+        }
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            self.log(self.t('manual_edits_load_error', str(e)))
+
+    def _apply_variable_filter(self):
+        """Applica il filtro variabili e ricalcola gli score filtrati"""
+        include = [p.strip() for p in self.filter_include_var.get().split(',') if p.strip()]
+        exclude = [p.strip() for p in self.filter_exclude_var.get().split(',') if p.strip()]
+        self.variable_filter = WTVariableFilter(include=include, exclude=exclude)
+        if not self.choices:
+            return
+        for choice in self.choices:
+            effects = choice.get('effects', [])
+            filtered_score = self.variable_filter.score(effects)
+            choice['filtered_score'] = filtered_score
+            choice['is_best_filtered'] = filtered_score > 0
+            if 'hint_text' in choice:
+                # Non sovrascrivere hint custom, solo quello auto
+                if not choice.get('hint_text_custom'):
+                    relevant = self.variable_filter.filtered_effects(effects)
+                    parts = []
+                    for e in relevant:
+                        var = e['var']
+                        val = e.get('value') or 0
+                        if val > 0:
+                            parts.append(f"{var} +{val}")
+                        elif val < 0:
+                            parts.append(f"{var} {val}")
+                        else:
+                            parts.append(var)
+                    choice['hint_text'] = ', '.join(parts)
+        self.apply_filter()
+
     def _get_color_emoji(self, choice):
         """Restituisce un emoji che rappresenta il colore in-game effettivo"""
+        score = choice.get('filtered_score', choice['total_score'])
         override = choice.get('color_override')
-        if override == 'best' or (not override and choice['total_score'] > 0):
+        if override == 'best' or (not override and score > 0):
             return '🟢'
-        if override == 'bad' or (not override and choice['total_score'] < 0):
+        if override == 'bad' or (not override and score < 0):
             return '🔴'
         if override == 'none':
             return '➖'
@@ -784,13 +892,13 @@ class RenPyWTTool:
         """Applica filtro, ricerca e filtro file alla lista scelte"""
         self.filter_mode = self.filter_var.get()
         self.choices_list.delete(*self.choices_list.get_children())
-        
+
         search_text = self.search_var.get().lower() if hasattr(self, 'search_var') else ''
         selected_file = self.file_filter_var.get() if hasattr(self, 'file_filter_var') else self.t('all_files')
         all_files_label = self.t('all_files')
-        
+
         for idx, choice in enumerate(self.choices):
-            score = choice['total_score']
+            score = choice.get('filtered_score', choice['total_score'])
             if self.filter_mode == 'best' and score <= 0:
                 continue
             elif self.filter_mode == 'neutral' and score != 0:
@@ -973,8 +1081,9 @@ class RenPyWTTool:
                     break
             self.color_override_var.set(selected_label)
 
+            score = choice.get('filtered_score', choice['total_score'])
             details = f"Choice: {choice['choice_text']}\n"
-            details += f"Score: {choice['total_score']}\n"
+            details += f"Score: {choice['total_score']}  (filtered: {score})\n"
             if choice.get('color_override'):
                 details += f"Color override: {choice['color_override']}\n"
             details += f"Hint (auto): {choice.get('hint_text', '')}\n"
@@ -985,6 +1094,12 @@ class RenPyWTTool:
             for var in choice['variables']:
                 sign = '+' if var['value'] >= 0 else ''
                 details += f"  {var['name']}: {sign}{var['value']}\n"
+            details += "\nEffects:\n"
+            for eff in choice.get('effects', []):
+                details += f"  {eff['var']}  op={eff['op']}  value={eff['value']}"
+                if eff.get('condition'):
+                    details += f"  (if {eff['condition']})"
+                details += "\n"
             self.choice_details_text.configure(state="normal")
             self.choice_details_text.delete("1.0", "end")
             self.choice_details_text.insert("end", details)
@@ -997,9 +1112,12 @@ class RenPyWTTool:
             return
             
         try:
-            self.generator = WTGenerator(self.game_path, self.export_mode)
+            self.generator = WTGenerator(
+                self.game_path, self.export_mode,
+                self.variable_filter, self.route_name_var.get().strip()
+            )
             self.generator.generate_mod(self.choices, self.variables)
-            
+
             # Mostra popup con percorso completo
             mod_path = self.generator.output_dir
             messagebox.showinfo("Success", self.t('mod_saved_path', mod_path))

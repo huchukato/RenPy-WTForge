@@ -8,8 +8,11 @@ Basato sul codice originale di fergz
 import os
 import re
 import io
+import ast
 from pathlib import Path
 from collections import defaultdict
+
+from wt_effects import WTChoiceEffectExtractor, WTVariableFilter
 
 
 class WTAnalyzer:
@@ -34,6 +37,11 @@ class WTAnalyzer:
         # Dati analizzati
         self.variables = {}  # {var_name: {info}}
         self.choices = []    # Lista di tutte le scelte trovate
+
+        # Effect extraction
+        self.effect_extractor = WTChoiceEffectExtractor()
+        self.default_filter = WTVariableFilter()
+        self._rpy_files = []
         
     def match_choice(self, line):
         """Verifica se la linea è una scelta di menu"""
@@ -300,6 +308,14 @@ class WTAnalyzer:
                 if len(vars) and any(vars[-1].startswith(s) for s in self.ifelse):
                     vars.pop()
 
+                # Estrae gli effetti dal blocco scelta (assignments, if, jump)
+                try:
+                    effects = self.effect_extractor.extract(data, index + 1, cur_indent, current_file=str(file_path))
+                except Exception:
+                    effects = []
+
+                filtered_score = self.default_filter.score(effects)
+
                 # Calcola punteggio e variabili (anche se vars è vuoto → jump-only)
                 score = self.get_num_from_list(vars) if vars else 0
                 bool_score = self.get_bool_score(vars) if vars else None
@@ -345,8 +361,11 @@ class WTAnalyzer:
                     'line': index + 1,
                     'choice_text': raw_choice,
                     'variables': var_info,
+                    'effects': effects,
                     'total_score': score,
+                    'filtered_score': filtered_score,
                     'is_best': score > 0,
+                    'is_best_filtered': filtered_score > 0,
                     'hint_text': hint_text,
                     'hint_text_custom': None,
                     'color_override': None
@@ -356,12 +375,15 @@ class WTAnalyzer:
     def analyze_directory(self, directory):
         """Analizza tutti i file .rpy in una directory"""
         rpy_files = list(Path(directory).rglob("*.rpy"))
-        
+
         # Escludi file di sistema e cartella wtmod generata da WTForge
         exclude_files = ['gui.rpy', 'screens.rpy', 'options.rpy', 'images.rpy', 'gallery.rpy']
         rpy_files = [f for f in rpy_files
                      if f.name not in exclude_files
                      and 'wtmod' not in f.parts]
+
+        self._rpy_files = [str(f) for f in rpy_files]
+        self.effect_extractor.files = self._rpy_files
         
         print(f"Analisi di {len(rpy_files)} file .rpy...")
         

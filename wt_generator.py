@@ -9,18 +9,24 @@ import re
 import json
 from pathlib import Path
 
+from wt_effects import WTVariableFilter
+
 
 class WTGenerator:
-    def __init__(self, game_path, export_mode='all'):
+    def __init__(self, game_path, export_mode='all', variable_filter=None, route_name=''):
         """
         Inizializza il generatore
-        
+
         Args:
             game_path: Percorso al gioco
             export_mode: 'all' per tutte le scelte, 'best' per solo le migliori
+            variable_filter: WTVariableFilter per escludere variabili non rilevanti
+            route_name: nome della route (es. 'elea') per file distinti
         """
         self.game_path = Path(game_path)
         self.export_mode = export_mode
+        self.variable_filter = variable_filter or WTVariableFilter()
+        self.route_name = route_name
         
         # Determina il percorso di output corretto in base alla piattaforma
         if self.game_path.suffix == '.app':
@@ -55,10 +61,18 @@ class WTGenerator:
             return self.color_neutral
         return self.get_color(0)
     
+    def get_choice_score(self, choice):
+        """Restituisce lo score filtrato se disponibile, altrimenti il totale"""
+        return choice.get('filtered_score', choice['total_score'])
+
+    def is_choice_best(self, choice):
+        """True se la scelta è la migliore considerando il filtro variabili"""
+        return choice.get('is_best_filtered', choice.get('is_best', self.get_choice_score(choice) > 0))
+
     def filter_choices(self, choices):
         """Filtra le scelte in base alla modalità di esportazione"""
         if self.export_mode == 'best':
-            return [choice for choice in choices if choice['total_score'] > 0]
+            return [choice for choice in choices if self.is_choice_best(choice)]
         return choices
         
     def create_output_directory(self):
@@ -71,7 +85,7 @@ class WTGenerator:
         for var in variables:
             var_name = var['name']
             var_value = var['value']
-            
+
             # Formatta il valore
             if var_value > 0:
                 hint_parts.append(f"{var_name} +{var_value}")
@@ -79,8 +93,27 @@ class WTGenerator:
                 hint_parts.append(f"{var_name} {var_value}")
             else:
                 hint_parts.append(var_name)
-                
+
         return ', '.join(hint_parts)
+
+    def generate_hint_text_from_effects(self, effects):
+        """Genera hint testo solo dagli effetti rilevanti per il filtro attivo."""
+        if not effects:
+            return ''
+        relevant = self.variable_filter.filtered_effects(effects)
+        if not relevant:
+            return ''
+        parts = []
+        for e in relevant:
+            var = e['var']
+            val = e.get('value') or 0
+            if val > 0:
+                parts.append(f"{var} +{val}")
+            elif val < 0:
+                parts.append(f"{var} {val}")
+            else:
+                parts.append(var)
+        return ', '.join(parts)
     
     def get_game_dir(self):
         """Restituisce la directory game/ in base alla piattaforma"""
@@ -139,9 +172,12 @@ class WTGenerator:
         return translations
 
     def get_hint_for_choice(self, choice):
-        """Restituisce l'hint text da usare (custom se disponibile, altrimenti auto)"""
+        """Restituisce l'hint text da usare (custom se disponibile, altrimenti filtrato)"""
         if choice.get('hint_text_custom'):
             return choice['hint_text_custom']
+        # Se ci sono gli effetti estratti, mostra solo quelli rilevanti
+        if 'effects' in choice:
+            return self.generate_hint_text_from_effects(choice['effects'])
         return choice.get('hint_text', self.generate_hint_text(choice['variables']))
 
     def generate_main_mod_file(self, choices):
@@ -162,6 +198,7 @@ class WTGenerator:
                 entries.append(f'    "{safe_t}": ("{color}", "{safe_h}"),')
 
         for choice in choices:
+            score = self.get_choice_score(choice)
             if choice.get('color_override') == 'none':
                 # Lascia la scelta esattamente come nel gioco originale
                 color = ''
@@ -169,12 +206,12 @@ class WTGenerator:
             elif choice.get('color_override'):
                 color = self.get_override_color(choice['color_override'])
                 hint = self.get_hint_for_choice(choice)
-            elif choice['total_score'] == 0:
+            elif score == 0:
                 # Scelte neutre senza override: lascia colore originale del gioco
                 color = ''
                 hint = ''
             else:
-                color = self.get_color(choice['total_score'])
+                color = self.get_color(score)
                 hint = self.get_hint_for_choice(choice)
             raw_text = choice['choice_text'].strip('"').strip("'")
             # Rimuovi condizione if ... residua (es. testo" if var == False)
@@ -246,33 +283,36 @@ init python:
     def generate_mod(self, choices, variables):
         """Genera tutti i file mod"""
         self.create_output_directory()
-        
+
         # Filtra le scelte in base alla modalità di esportazione
         filtered_choices = self.filter_choices(choices)
-        
+
+        # Suffix per route
+        suffix = f"_{self.route_name}" if self.route_name else ''
+
         # Genera file mod principale
         main_mod = self.generate_main_mod_file(filtered_choices)
-        main_mod_path = self.output_dir / "wtmod.rpy"
+        main_mod_path = self.output_dir / f"wtmod{suffix}.rpy"
         with open(main_mod_path, 'w', encoding='utf-8') as f:
             f.write(main_mod)
-        
+
         # Genera file screens mod
         screens_mod = self.generate_screens_mod()
-        screens_mod_path = self.output_dir / "wtmod_screens.rpy"
+        screens_mod_path = self.output_dir / f"wtmod{suffix}_screens.rpy"
         with open(screens_mod_path, 'w', encoding='utf-8') as f:
             f.write(screens_mod)
-        
+
         # Genera file configurazione
         config_json = self.generate_config_file(variables)
-        config_path = self.output_dir / "wtmod_config.json"
+        config_path = self.output_dir / f"wtmod{suffix}_config.json"
         with open(config_path, 'w', encoding='utf-8') as f:
             f.write(config_json)
-        
+
         print(f"Mod generati in: {self.output_dir}")
-        print(f"  - wtmod.rpy")
-        print(f"  - wtmod_screens.rpy")
-        print(f"  - wtmod_config.json")
-        
+        print(f"  - wtmod{suffix}.rpy")
+        print(f"  - wtmod_screens{suffix}.rpy")
+        print(f"  - wtmod_config{suffix}.json")
+
         return True
     
     def generate_gallery_unlocker(self, detection=None):
