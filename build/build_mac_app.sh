@@ -100,3 +100,13 @@ LAUNCHER
 chmod +x "$LAUNCHER"
 
 echo "[WTForge Mac] Bundle ready: $BUNDLE_DIR"
+
+# Crea DMG per distribuzione
+ARCH=$(uname -m)
+DMG_NAME="RenPy-WTForge[v${VERSION}]-${ARCH}.dmg"
+DMG_PATH="dist/${DMG_NAME}"
+
+echo "[WTForge Mac] Creating DMG: $DMG_PATH"
+rm -f "$DMG_PATH"
+hdiutil create -srcfolder "$BUNDLE_DIR" -volname "$APP_NAME" -fs HFS+ -format UDZO -ov "$DMG_PATH" >/dev/null 2>&1
+echo "[WTForge Mac] DMG ready: $DMG_PATH"
