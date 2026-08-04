@@ -96,24 +96,9 @@ class WTGenerator:
 
         return ', '.join(hint_parts)
 
-    def generate_hint_text_from_effects(self, effects):
-        """Genera hint testo solo dagli effetti rilevanti per il filtro attivo."""
-        if not effects:
-            return ''
-        relevant = self.variable_filter.filtered_effects(effects)
-        if not relevant:
-            return ''
-        parts = []
-        for e in relevant:
-            var = e['var']
-            val = e.get('value') or 0
-            if val > 0:
-                parts.append(f"{var} +{val}")
-            elif val < 0:
-                parts.append(f"{var} {val}")
-            else:
-                parts.append(var)
-        return ', '.join(parts)
+    def generate_hint_text_from_effects(self, effects, max_items=3):
+        """Genera un hint breve dalle variabili rilevanti (max 3 di default)."""
+        return self.variable_filter.concise_hint(effects, max_items=max_items)
     
     def get_game_dir(self):
         """Restituisce la directory game/ in base alla piattaforma"""

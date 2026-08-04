@@ -64,6 +64,25 @@ class WTVariableFilter:
         """Ritorna solo gli effetti rilevanti."""
         return [e for e in effects if self.is_relevant(e.get('var', ''))]
 
+    def concise_hint(self, effects, max_items=3):
+        """Costruisce un hint breve con le variabili rilevanti più significative."""
+        relevant = self.filtered_effects(effects)
+        if not relevant:
+            return ''
+        # Ordina per impatto assoluto decrescente, poi per nome
+        relevant = sorted(relevant, key=lambda e: (-abs(e.get('value', 0) or 0), e.get('var', '')))
+        parts = []
+        for e in relevant[:max_items]:
+            var = e['var']
+            val = e.get('value') or 0
+            if val > 0:
+                parts.append(f"{var} +{val}")
+            elif val < 0:
+                parts.append(f"{var} {val}")
+            else:
+                parts.append(var)
+        return ', '.join(parts)
+
     def to_dict(self):
         return {
             'include': self.include_patterns,

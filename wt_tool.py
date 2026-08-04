@@ -747,7 +747,17 @@ class RenPyWTTool:
                 if r.get('label'):
                     labels.add(r['label'])
         values = ['(none)'] + sorted(labels)
-        self.route_menu.configure(values=values)
+        self.log(f"Detected routes: {values}")
+        # CTkOptionMenu a volte non aggiorna la lista con configure(values=...);
+        # forziamo la ricreazione del menu interno
+        try:
+            self.route_menu.configure(values=values)
+            if hasattr(self.route_menu, '_values'):
+                self.route_menu._values = list(values)
+            if hasattr(self.route_menu, '_create_option_menu'):
+                self.route_menu._create_option_menu()
+        except Exception as e:
+            self.log(f"Warning: could not update route dropdown: {e}")
         self.route_var.set('(none)')
 
     def _get_game_dir(self):
@@ -888,18 +898,7 @@ class RenPyWTTool:
             if 'hint_text' in choice:
                 # Non sovrascrivere hint custom, solo quello auto
                 if not choice.get('hint_text_custom'):
-                    relevant = self.variable_filter.filtered_effects(effects)
-                    parts = []
-                    for e in relevant:
-                        var = e['var']
-                        val = e.get('value') or 0
-                        if val > 0:
-                            parts.append(f"{var} +{val}")
-                        elif val < 0:
-                            parts.append(f"{var} {val}")
-                        else:
-                            parts.append(var)
-                    choice['hint_text'] = ', '.join(parts)
+                    choice['hint_text'] = self.variable_filter.concise_hint(effects, max_items=3)
         self.apply_filter()
 
     def _apply_detected_route(self):
