@@ -702,7 +702,10 @@ class RenPyWTTool:
             # Analisi
             self.log("Phase 3: Analyzing .rpy files...")
             self.analyzer = WTAnalyzer()
-            self.choices, self.variables = self.analyzer.analyze_directory(self.extractor.output_dir)
+            self.choices, self.variables = self.analyzer.analyze_directory(
+                self.extractor.output_dir,
+                progress_callback=lambda c, t: self.update_progress(c, t, self.t('analysis_in_progress'))
+            )
 
             # Rilevamento galleria
             self.log("Phase 4: Detecting gallery system...")

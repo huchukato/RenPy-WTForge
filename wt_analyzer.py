@@ -376,7 +376,7 @@ class WTAnalyzer:
                 }
                 self.choices.append(choice_data)
     
-    def analyze_directory(self, directory):
+    def analyze_directory(self, directory, progress_callback=None):
         """Analizza tutti i file .rpy in una directory"""
         rpy_files = list(Path(directory).rglob("*.rpy"))
 
@@ -391,8 +391,10 @@ class WTAnalyzer:
         
         print(f"Analisi di {len(rpy_files)} file .rpy...")
         
-        for rpy_file in rpy_files:
+        for i, rpy_file in enumerate(rpy_files, 1):
             self.analyze_file(rpy_file)
+            if progress_callback:
+                progress_callback(i, len(rpy_files))
         
         print(f"Trovate {len(self.choices)} scelte")
         print(f"Trovate {len(self.variables)} variabili uniche")
