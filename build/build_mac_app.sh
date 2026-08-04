@@ -6,9 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR/.."
 cd "$PROJECT_DIR"
 
-APP_NAME="RenPy-WTForge"
+APP_NAME="RenPy WT Forge"
 VERSION=$(grep -E '^version[[:space:]]*=[[:space:]]*"' pyproject.toml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
-BUNDLE_NAME="${APP_NAME}-v${VERSION}"
+BUNDLE_NAME="${APP_NAME}"
 BUNDLE_DIR="dist/${BUNDLE_NAME}.app"
 PROJECT_DST="$BUNDLE_DIR/Contents/Resources/project"
 ICNS_SRC="img/logo.icns"
