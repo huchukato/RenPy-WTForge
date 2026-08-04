@@ -329,6 +329,7 @@ class RenPyWTTool:
         self.filter_include_var = ctk.StringVar()
         self.filter_exclude_var = ctk.StringVar()
         self.route_name_var = ctk.StringVar()
+        self.route_var = ctk.StringVar(value='(none)')
 
         # Setup UI
         self.setup_ui()
@@ -585,24 +586,36 @@ class RenPyWTTool:
         filter_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 10))
         filter_frame.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(filter_frame, text="Include vars:",
+        ctk.CTkLabel(filter_frame, text="Detected route:",
                      font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, sticky="w", padx=10, pady=(8, 2))
-        ctk.CTkEntry(filter_frame, textvariable=self.filter_include_var,
-                     placeholder_text="elea*, lp_elea*").grid(row=0, column=1, sticky="ew", padx=10, pady=(8, 2))
-        ctk.CTkLabel(filter_frame, text="Exclude vars:",
+        self.route_menu = ctk.CTkOptionMenu(filter_frame, variable=self.route_var,
+                                            values=['(none)'], width=140)
+        self.route_menu.grid(row=0, column=1, sticky="ew", padx=10, pady=(8, 2))
+        ctk.CTkButton(filter_frame, text="Use route",
+                      command=self._apply_detected_route, width=90,
+                      fg_color="#4f728f", hover_color="#3e5c75").grid(row=0, column=2, padx=10, pady=(8, 2))
+
+        ctk.CTkLabel(filter_frame, text="Include vars:",
                      font=ctk.CTkFont(weight="bold")).grid(row=1, column=0, sticky="w", padx=10, pady=2)
-        ctk.CTkEntry(filter_frame, textvariable=self.filter_exclude_var,
-                     placeholder_text="fiona*, lp_fiona*").grid(row=1, column=1, sticky="ew", padx=10, pady=2)
-        ctk.CTkLabel(filter_frame, text="Route name:",
+        ctk.CTkEntry(filter_frame, textvariable=self.filter_include_var,
+                     placeholder_text="elea*, lp_elea*").grid(row=1, column=1, columnspan=2, sticky="ew", padx=10, pady=2)
+        ctk.CTkLabel(filter_frame, text="Exclude vars:",
                      font=ctk.CTkFont(weight="bold")).grid(row=2, column=0, sticky="w", padx=10, pady=2)
+        ctk.CTkEntry(filter_frame, textvariable=self.filter_exclude_var,
+                     placeholder_text="fiona*, lp_fiona*").grid(row=2, column=1, columnspan=2, sticky="ew", padx=10, pady=2)
+        ctk.CTkLabel(filter_frame, text="Route name:",
+                     font=ctk.CTkFont(weight="bold")).grid(row=3, column=0, sticky="w", padx=10, pady=2)
         ctk.CTkEntry(filter_frame, textvariable=self.route_name_var,
-                     placeholder_text="elea").grid(row=2, column=1, sticky="ew", padx=10, pady=2)
+                     placeholder_text="elea").grid(row=3, column=1, columnspan=2, sticky="ew", padx=10, pady=2)
         ctk.CTkButton(filter_frame, text="Apply filter",
                       command=self._apply_variable_filter, width=90,
-                      fg_color="#4f728f", hover_color="#3e5c75").grid(row=3, column=0, padx=10, pady=(4, 8), sticky="w")
+                      fg_color="#4f728f", hover_color="#3e5c75").grid(row=4, column=0, padx=10, pady=(4, 8), sticky="w")
         ctk.CTkButton(filter_frame, text="Save filters",
                       command=self._save_filters, width=90,
-                      fg_color="#5c6d7d", hover_color="#4a5966").grid(row=3, column=1, padx=10, pady=(4, 8), sticky="e")
+                      fg_color="#5c6d7d", hover_color="#4a5966").grid(row=4, column=1, padx=10, pady=(4, 8), sticky="w")
+        ctk.CTkButton(filter_frame, text="Clear route",
+                      command=self._clear_route_filter, width=90,
+                      fg_color="#86878a", hover_color="#6b6c6e").grid(row=4, column=2, padx=10, pady=(4, 8), sticky="e")
 
     def setup_log_tab(self, parent):
         parent.grid_rowconfigure(0, weight=1)
@@ -710,6 +723,7 @@ class RenPyWTTool:
         self.progress_label.configure(text=self.t('analysis_complete', len(self.choices), len(self.variables)))
         self.log(self.t('analysis_complete', len(self.choices), len(self.variables)))
         self._populate_file_filter()
+        self._populate_routes()
         self._load_manual_edits()
         self._load_filters()
         self._apply_variable_filter()
@@ -722,6 +736,19 @@ class RenPyWTTool:
         files = sorted(set(Path(c['file']).name for c in self.choices))
         self.file_filter_combo.configure(values=[all_label] + files)
         self.file_filter_var.set(all_label)
+
+    def _populate_routes(self):
+        """Popola il dropdown delle route rilevate"""
+        if not hasattr(self, 'route_menu') or not self.choices:
+            return
+        labels = set()
+        for c in self.choices:
+            for r in c.get('routes', []):
+                if r.get('label'):
+                    labels.add(r['label'])
+        values = ['(none)'] + sorted(labels)
+        self.route_menu.configure(values=values)
+        self.route_var.set('(none)')
 
     def _get_game_dir(self):
         """Restituisce la directory game/ del gioco selezionato"""
@@ -874,6 +901,38 @@ class RenPyWTTool:
                             parts.append(var)
                     choice['hint_text'] = ', '.join(parts)
         self.apply_filter()
+
+    def _apply_detected_route(self):
+        """Usa la route selezionata per impostare nome e filtri suggeriti"""
+        selected = self.route_var.get().strip()
+        if not selected or selected == '(none)':
+            return
+
+        self.route_name_var.set(selected)
+
+        # Variabili toccate dalle scelte che portano a questa route
+        vars_in_route = set()
+        vars_in_other = set()
+        for choice in self.choices:
+            choice_routes = [r.get('label') for r in choice.get('routes', [])]
+            choice_vars = set(e.get('var') for e in choice.get('effects', []) if e.get('var'))
+            if selected in choice_routes:
+                vars_in_route.update(choice_vars)
+            else:
+                vars_in_other.update(choice_vars)
+
+        self.filter_include_var.set(', '.join(sorted(vars_in_route)))
+        # Esclude le variabili presenti solo nelle altre route
+        self.filter_exclude_var.set(', '.join(sorted(vars_in_other - vars_in_route)))
+        self._apply_variable_filter()
+
+    def _clear_route_filter(self):
+        """Svuota i filtri e il nome route"""
+        self.route_var.set('(none)')
+        self.route_name_var.set('')
+        self.filter_include_var.set('')
+        self.filter_exclude_var.set('')
+        self._apply_variable_filter()
 
     def _get_color_emoji(self, choice):
         """Restituisce un emoji che rappresenta il colore in-game effettivo"""
@@ -1099,6 +1158,12 @@ class RenPyWTTool:
                 details += f"  {eff['var']}  op={eff['op']}  value={eff['value']}"
                 if eff.get('condition'):
                     details += f"  (if {eff['condition']})"
+                details += "\n"
+            details += "\nRoutes:\n"
+            for r in choice.get('routes', []):
+                details += f"  {r['kind']} {r['label']}"
+                if r.get('condition'):
+                    details += f"  (if {r['condition']})"
                 details += "\n"
             self.choice_details_text.configure(state="normal")
             self.choice_details_text.delete("1.0", "end")

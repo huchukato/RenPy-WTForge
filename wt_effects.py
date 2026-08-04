@@ -142,12 +142,13 @@ class WTChoiceEffectExtractor:
         return s.strip()
 
     def extract(self, lines, start_index, base_indent, current_file=None):
-        """Estrae gli effetti dal blocco che inizia a start_index."""
+        """Estrae effetti e route dal blocco che inizia a start_index."""
         self._seen_labels = set()
         return self._extract_block(lines, start_index, base_indent, current_file)
 
     def _extract_block(self, lines, start_index, base_indent, current_file=None):
         effects = []
+        routes = []
         i = start_index
         n = len(lines)
         # stack di (body_indent, condition)
@@ -234,10 +235,12 @@ class WTChoiceEffectExtractor:
 
             condition = if_stack[-1][1] if if_stack else None
 
-            # Jump: seguiamo label una volta sola
+            # Jump: seguiamo label una volta sola e registriamo la route
             m_jump = self._JUMP_RE.match(text)
             if m_jump:
-                extra = self._follow_label(m_jump.group(1), current_file)
+                target = m_jump.group(1)
+                routes.append({'kind': 'jump', 'label': target, 'condition': condition})
+                extra = self._follow_label(target, current_file)
                 if extra:
                     # Applichiamo la condizione corrente a quelli seguiti
                     for e in extra:
@@ -245,10 +248,12 @@ class WTChoiceEffectExtractor:
                     effects.extend(extra)
                 break
 
-            # Call: seguiamo label e poi continuiamo
+            # Call: seguiamo label, registriamo la route e poi continuiamo
             m_call = self._CALL_RE.match(text)
             if m_call:
-                extra = self._follow_label(m_call.group(1), current_file)
+                target = m_call.group(1)
+                routes.append({'kind': 'call', 'label': target, 'condition': condition})
+                extra = self._follow_label(target, current_file)
                 if extra:
                     for e in extra:
                         e['condition'] = condition or e.get('condition')
@@ -290,7 +295,7 @@ class WTChoiceEffectExtractor:
 
             i += 1
 
-        return effects
+        return {'effects': effects, 'routes': routes}
 
     def _split_values(self, rhs, n_targets):
         """Prova a dividere rhs in n valori per assegnazioni multiple."""
@@ -384,5 +389,6 @@ class WTChoiceEffectExtractor:
             for idx, line in enumerate(lines):
                 if re.match(rf'^\s*label\s+{re.escape(label)}\s*:', line.lstrip()):
                     base_indent = len(line) - len(line.lstrip())
-                    return self._extract_block(lines, idx + 1, base_indent, current_file=f)
+                    res = self._extract_block(lines, idx + 1, base_indent, current_file=f)
+                    return res.get('effects', res)
         return []

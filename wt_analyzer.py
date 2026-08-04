@@ -308,11 +308,14 @@ class WTAnalyzer:
                 if len(vars) and any(vars[-1].startswith(s) for s in self.ifelse):
                     vars.pop()
 
-                # Estrae gli effetti dal blocco scelta (assignments, if, jump)
+                # Estrae gli effetti e le route dal blocco scelta
                 try:
-                    effects = self.effect_extractor.extract(data, index + 1, cur_indent, current_file=str(file_path))
+                    res = self.effect_extractor.extract(data, index + 1, cur_indent, current_file=str(file_path))
+                    effects = res.get('effects', [])
+                    routes = res.get('routes', [])
                 except Exception:
                     effects = []
+                    routes = []
 
                 filtered_score = self.default_filter.score(effects)
 
@@ -362,6 +365,7 @@ class WTAnalyzer:
                     'choice_text': raw_choice,
                     'variables': var_info,
                     'effects': effects,
+                    'routes': routes,
                     'total_score': score,
                     'filtered_score': filtered_score,
                     'is_best': score > 0,
