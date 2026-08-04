@@ -130,10 +130,14 @@ class WTExtractor:
         for rpyc_file in self.output_dir.rglob("*.rpyc"):
             # Escludi file di sistema
             if not any(x in rpyc_file.name.lower() for x in ['gui', 'screens', 'options', 'images']):
+                # Salta se esiste già un .rpy più recente
+                rpy_file = rpyc_file.with_suffix('.rpy')
+                if rpy_file.exists() and rpy_file.stat().st_mtime >= rpyc_file.stat().st_mtime:
+                    continue
                 rpyc_files.append(rpyc_file)
         
         if not rpyc_files:
-            print("Nessun file .rpyc trovato da decompilare")
+            print("Nessun file .rpyc da decompilare (già presenti)")
             return True
             
         print(f"Trovati {len(rpyc_files)} file .rpyc da decompilare")
