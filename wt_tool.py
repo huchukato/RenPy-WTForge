@@ -113,7 +113,12 @@ TRANSLATIONS = {
         'replace_count': "Replaced {} hints",
         'cancel': "Cancel",
         'no_effects': "No effects",
-        'menu': "Menu"
+        'menu': "Menu",
+        'var_aliases': "Variable Aliases",
+        'var_aliases_title': "Rename variables — set an alias for each variable",
+        'var_name': "Variable",
+        'alias': "Alias",
+        'var_aliases_saved': "Saved {} variable aliases"
     },
     'it': {
         'title': "Ren'Py WTForge",
@@ -205,7 +210,12 @@ TRANSLATIONS = {
         'replace_count': "Sostituiti {} hint",
         'cancel': "Annulla",
         'no_effects': "Senza effetti",
-        'menu': "Menu"
+        'menu': "Menu",
+        'var_aliases': "Alias variabili",
+        'var_aliases_title': "Rinomina variabili — imposta un alias per ciascuna",
+        'var_name': "Variabile",
+        'alias': "Alias",
+        'var_aliases_saved': "Salvati {} alias di variabili"
     },
     'es': {
         'title': "Ren'Py WTForge",
@@ -297,7 +307,12 @@ TRANSLATIONS = {
         'replace_count': "Reemplazados {} pistas",
         'cancel': "Cancelar",
         'no_effects': "Sin efectos",
-        'menu': "Menú"
+        'menu': "Menú",
+        'var_aliases': "Alias de variables",
+        'var_aliases_title': "Renombrar variables — establece un alias para cada una",
+        'var_name': "Variable",
+        'alias': "Alias",
+        'var_aliases_saved': "Guardados {} alias de variables"
     }
 }
 
@@ -329,6 +344,7 @@ class RenPyWTTool:
         self.filter_mode = 'all'
         self.export_mode = 'all'
         self.choice_edits = {}
+        self.var_aliases = {}
 
         # Filtro variabili per route/storia
         self.variable_filter = WTVariableFilter()
@@ -480,6 +496,9 @@ class RenPyWTTool:
         ctk.CTkButton(filter_bar, text=self.t('replace_all'), width=100,
                       fg_color="#5c6d7d", hover_color="#4a5966",
                       command=self.open_replace_dialog).pack(side="left", padx=(12, 4), pady=6)
+        ctk.CTkButton(filter_bar, text=self.t('var_aliases'), width=130,
+                      fg_color="#5c6d7d", hover_color="#4a5966",
+                      command=self.open_var_aliases_dialog).pack(side="left", padx=(4, 10), pady=6)
 
         # Split: lista sinistra, dettagli destra
         split = ctk.CTkFrame(parent, corner_radius=0, fg_color="transparent")
@@ -813,7 +832,8 @@ class RenPyWTTool:
         data = {
             'version': '1.0',
             'game_path': str(self.game_path),
-            'edits': edits
+            'edits': edits,
+            'var_aliases': self.var_aliases
         }
         try:
             with open(path, 'w', encoding='utf-8') as f:
@@ -834,6 +854,8 @@ class RenPyWTTool:
                 data = json.load(f)
             edits = data.get('edits', [])
             lookup = {edit['choice_text']: edit for edit in edits}
+            # Carica alias variabili
+            self.var_aliases = data.get('var_aliases', {})
             applied = 0
             for choice in self.choices:
                 edit = lookup.get(choice['choice_text'])
@@ -910,7 +932,11 @@ class RenPyWTTool:
             if 'hint_text' in choice:
                 # Non sovrascrivere hint custom, solo quello auto
                 if not choice.get('hint_text_custom'):
-                    choice['hint_text'] = self.variable_filter.concise_hint(effects, max_items=3)
+                    raw_hint = self.variable_filter.concise_hint(effects, max_items=3)
+                    if raw_hint and self.var_aliases:
+                        for orig, alias in self.var_aliases.items():
+                            raw_hint = raw_hint.replace(orig, alias)
+                    choice['hint_text'] = raw_hint
         self.apply_filter()
 
     def _apply_detected_route(self):
@@ -1144,6 +1170,62 @@ class RenPyWTTool:
             self._save_manual_edits()
             self.log(self.t('replace_count', replaced))
 
+    def _apply_var_alias(self, var_name):
+        """Restituisce l'alias se definito, altrimenti il nome originale."""
+        return self.var_aliases.get(var_name, var_name)
+
+    def open_var_aliases_dialog(self):
+        """Apre un dialog per impostare alias delle variabili."""
+        if not self.choices:
+            return
+        # Raccogli tutte le variabili uniche dagli effetti
+        all_vars = set()
+        for choice in self.choices:
+            for eff in choice.get('effects', []):
+                if eff.get('var'):
+                    all_vars.add(eff['var'])
+        if not all_vars:
+            messagebox.showinfo(self.t('var_aliases'), "No variables found.")
+            return
+        sorted_vars = sorted(all_vars)
+        dialog = ctk.CTkToplevel(self.root)
+        dialog.title(self.t('var_aliases'))
+        dialog.geometry("500x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        ctk.CTkLabel(dialog, text=self.t('var_aliases_title'),
+                     font=ctk.CTkFont(weight="bold")).pack(padx=12, pady=(12, 6))
+        # Frame scrollable
+        scroll = ctk.CTkScrollableFrame(dialog, height=380)
+        scroll.pack(fill="both", expand=True, padx=12, pady=6)
+        entries = {}
+        for i, var in enumerate(sorted_vars):
+            ctk.CTkLabel(scroll, text=var, width=220, anchor="w").grid(row=i, column=0, padx=(4, 8), pady=2)
+            entry_var = ctk.StringVar(value=self.var_aliases.get(var, ''))
+            ctk.CTkEntry(scroll, textvariable=entry_var, width=200,
+                         placeholder_text=var).grid(row=i, column=1, padx=4, pady=2)
+            entries[var] = entry_var
+        # Pulsanti
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=12, pady=(6, 12))
+        def save_aliases():
+            count = 0
+            for var, entry_var in entries.items():
+                alias = entry_var.get().strip()
+                if alias and alias != var:
+                    self.var_aliases[var] = alias
+                    count += 1
+                elif var in self.var_aliases:
+                    del self.var_aliases[var]
+            self._save_manual_edits()
+            self._apply_variable_filter()
+            self.apply_filter()
+            self.log(self.t('var_aliases_saved', count))
+            dialog.destroy()
+        ctk.CTkButton(btn_frame, text=self.t('save_choice'), command=save_aliases).pack(side="right", padx=4)
+        ctk.CTkButton(btn_frame, text=self.t('cancel'), fg_color="#5c6d7d",
+                      hover_color="#4a5966", command=dialog.destroy).pack(side="right", padx=4)
+
     def on_choice_select(self, event):
         selection = self.choices_list.selection()
         if selection:
@@ -1177,12 +1259,13 @@ class RenPyWTTool:
             details += "\nEffects:\n"
             for eff in choice.get('effects', []):
                 val = eff.get('value') or 0
+                var_display = self._apply_var_alias(eff['var'])
                 if val > 0:
-                    details += f"  {eff['var']} +{val}"
+                    details += f"  {var_display} +{val}"
                 elif val < 0:
-                    details += f"  {eff['var']} {val}"
+                    details += f"  {var_display} {val}"
                 else:
-                    details += f"  {eff['var']} = {eff.get('raw', '').split('=', 1)[-1].strip() or val}"
+                    details += f"  {var_display} = {eff.get('raw', '').split('=', 1)[-1].strip() or val}"
                 if eff.get('condition'):
                     details += f"  (if {eff['condition']})"
                 details += "\n"
