@@ -111,7 +111,9 @@ TRANSLATIONS = {
         'replace_scope_all': "All choices",
         'replace_scope_filtered': "Filtered choices only",
         'replace_count': "Replaced {} hints",
-        'cancel': "Cancel"
+        'cancel': "Cancel",
+        'no_effects': "No effects",
+        'menu': "Menu"
     },
     'it': {
         'title': "Ren'Py WTForge",
@@ -201,7 +203,9 @@ TRANSLATIONS = {
         'replace_scope_all': "Tutte le scelte",
         'replace_scope_filtered': "Solo scelte filtrate",
         'replace_count': "Sostituiti {} hint",
-        'cancel': "Annulla"
+        'cancel': "Annulla",
+        'no_effects': "Senza effetti",
+        'menu': "Menu"
     },
     'es': {
         'title': "Ren'Py WTForge",
@@ -291,7 +295,9 @@ TRANSLATIONS = {
         'replace_scope_all': "Todas las opciones",
         'replace_scope_filtered': "Solo opciones filtradas",
         'replace_count': "Reemplazados {} pistas",
-        'cancel': "Cancelar"
+        'cancel': "Cancelar",
+        'no_effects': "Sin efectos",
+        'menu': "Menú"
     }
 }
 
@@ -443,7 +449,8 @@ class RenPyWTTool:
                      font=ctk.CTkFont(weight="bold")).pack(side="left", padx=(10, 4))
         self.filter_var = ctk.StringVar(value=self.filter_mode)
         for key, label in [('all', self.t('all')), ('best', self.t('best')),
-                            ('neutral', self.t('neutral')), ('bad', self.t('bad'))]:
+                            ('neutral', self.t('neutral')), ('bad', self.t('bad')),
+                            ('no_effects', self.t('no_effects'))]:
             ctk.CTkRadioButton(top_bar, text=label, variable=self.filter_var,
                                value=key, command=self.apply_filter).pack(side="left", padx=6, pady=6)
 
@@ -508,17 +515,19 @@ class RenPyWTTool:
                         relief="flat")
         style.map("Dark.Treeview", background=[("selected", "#4f728f")])
 
-        self.choices_list = ttk.Treeview(tree_frame, columns=('color', 'text', 'score', 'file', 'manual'),
+        self.choices_list = ttk.Treeview(tree_frame, columns=('color', 'text', 'score', 'menu', 'file', 'manual'),
                                           show='headings', style="Dark.Treeview")
         self.choices_list.heading('color', text='')
         self.choices_list.heading('text', text=self.t('choice'))
         self.choices_list.heading('score', text=self.t('score'))
+        self.choices_list.heading('menu', text=self.t('menu'))
         self.choices_list.heading('file', text=self.t('file'))
         self.choices_list.heading('manual', text='')
         self.choices_list.column('color', width=30, anchor="center", minwidth=30, stretch=False)
-        self.choices_list.column('text', width=380, minwidth=200)
-        self.choices_list.column('score', width=60, anchor="center")
-        self.choices_list.column('file', width=140)
+        self.choices_list.column('text', width=320, minwidth=200)
+        self.choices_list.column('score', width=50, anchor="center")
+        self.choices_list.column('menu', width=70, anchor="center")
+        self.choices_list.column('file', width=120)
         self.choices_list.column('manual', width=30, anchor="center", minwidth=30, stretch=False)
 
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.choices_list.yview)
@@ -958,13 +967,21 @@ class RenPyWTTool:
         selected_file = self.file_filter_var.get() if hasattr(self, 'file_filter_var') else self.t('all_files')
         all_files_label = self.t('all_files')
 
-        for idx, choice in enumerate(self.choices):
+        sorted_indices = sorted(range(len(self.choices)),
+                                key=lambda i: (self.choices[i]['file'],
+                                               self.choices[i].get('menu_line', 0),
+                                               self.choices[i]['line']))
+        for idx in sorted_indices:
+            choice = self.choices[idx]
             score = choice.get('filtered_score', choice['total_score'])
+            has_effects = bool(choice.get('effects', []))
             if self.filter_mode == 'best' and score <= 0:
                 continue
             elif self.filter_mode == 'neutral' and score != 0:
                 continue
             elif self.filter_mode == 'bad' and score >= 0:
+                continue
+            elif self.filter_mode == 'no_effects' and has_effects:
                 continue
             
             if search_text:
@@ -981,10 +998,12 @@ class RenPyWTTool:
             display_text = f"{choice['choice_text'][:40]}  ({hint})" if hint else choice['choice_text'][:50]
             color_emoji = self._get_color_emoji(choice)
             manual_symbol = '✏' if bool(choice.get('hint_text_custom') or choice.get('color_override')) else ''
+            menu_label = f"L{choice.get('menu_line', 0)}" if choice.get('menu_line') else ''
             self.choices_list.insert('', 'end', iid=str(idx), values=(
                 color_emoji,
                 display_text,
                 score,
+                menu_label,
                 file_name,
                 manual_symbol
             ))
@@ -1157,7 +1176,13 @@ class RenPyWTTool:
                 details += f"  {var['name']}: {sign}{var['value']}\n"
             details += "\nEffects:\n"
             for eff in choice.get('effects', []):
-                details += f"  {eff['var']}  op={eff['op']}  value={eff['value']}"
+                val = eff.get('value') or 0
+                if val > 0:
+                    details += f"  {eff['var']} +{val}"
+                elif val < 0:
+                    details += f"  {eff['var']} {val}"
+                else:
+                    details += f"  {eff['var']} = {eff.get('raw', '').split('=', 1)[-1].strip() or val}"
                 if eff.get('condition'):
                     details += f"  (if {eff['condition']})"
                 details += "\n"

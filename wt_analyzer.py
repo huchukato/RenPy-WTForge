@@ -289,6 +289,7 @@ class WTAnalyzer:
             return
         
         menu_stack = []
+        menu_line_stack = []
         for index, line in enumerate(data):
             exact_line = line.strip()
             cur_indent = len(line) - len(line.lstrip())
@@ -296,11 +297,13 @@ class WTAnalyzer:
             # Track menu blocks
             if re.match(r'^menu\b.*:$', exact_line):
                 menu_stack.append(cur_indent)
+                menu_line_stack.append(index + 1)
                 continue
             
             # Pop menus that have ended (ignore blank/comment lines)
             while menu_stack and cur_indent <= menu_stack[-1] and exact_line and not exact_line.startswith('#'):
                 menu_stack.pop()
+                menu_line_stack.pop()
             
             # Only consider choice lines inside a menu block
             if menu_stack and cur_indent > menu_stack[-1] and self.match_choice(exact_line):
@@ -354,14 +357,18 @@ class WTAnalyzer:
 
                 hint_text = self.generate_hint_text(var_info, jump_label)
 
-                raw_choice = exact_line.strip('"').rstrip(':')
-                # Rimuovi condizione if ... (es. "testo" if var == False)
-                if '" if ' in raw_choice:
-                    raw_choice = raw_choice.split('" if ')[0].strip('"').strip("'")
+                m = self._choice_re.match(exact_line)
+                if m:
+                    raw_choice = m.group(2)
+                else:
+                    raw_choice = exact_line.strip('"').rstrip(':')
+                    if '" if ' in raw_choice:
+                        raw_choice = raw_choice.split('" if ')[0].strip('"').strip("'")
 
                 choice_data = {
                     'file': str(file_path),
                     'line': index + 1,
+                    'menu_line': menu_line_stack[-1] if menu_line_stack else 0,
                     'choice_text': raw_choice,
                     'variables': var_info,
                     'effects': effects,
