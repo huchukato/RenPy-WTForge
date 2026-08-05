@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/License-As--Is-orange)
 ![GUI](https://img.shields.io/badge/GUI-customtkinter-green)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.1-blue)
 
 > A universal GUI tool to automatically generate **walkthrough mods** for Ren'Py games — with color-coded choices, custom hint labels, and a gallery unlocker. No coding required.
 
