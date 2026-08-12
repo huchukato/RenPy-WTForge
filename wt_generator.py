@@ -156,14 +156,37 @@ class WTGenerator:
 
         return translations
 
+    def get_route_hint(self, choice):
+        """Restituisce un hint testuale (es. '>> label1, label2') se la scelta
+        porta a una o più label/scene tramite jump/call."""
+        labels = []
+        for r in choice.get('routes') or []:
+            label = r.get('label')
+            if label and label not in labels:
+                labels.append(label)
+        if not labels:
+            return ''
+        return '>> ' + ', '.join(labels)
+
     def get_hint_for_choice(self, choice):
-        """Restituisce l'hint text da usare (custom se disponibile, altrimenti filtrato)"""
+        """Restituisce l'hint text da usare (custom se disponibile, altrimenti filtrato).
+        Include anche l'indicazione della route (jump/call) se presente, indipendentemente
+        dal punteggio, così anche una scelta senza effetti su variabili ma che porta a una
+        scena diversa mostra un hint (senza però influire sul colore)."""
         if choice.get('hint_text_custom'):
             return choice['hint_text_custom']
+        parts = []
         # Se ci sono gli effetti estratti, mostra solo quelli rilevanti
         if 'effects' in choice:
-            return self.generate_hint_text_from_effects(choice['effects'])
-        return choice.get('hint_text', self.generate_hint_text(choice['variables']))
+            eff_hint = self.generate_hint_text_from_effects(choice['effects'])
+        else:
+            eff_hint = choice.get('hint_text', self.generate_hint_text(choice['variables']))
+        if eff_hint:
+            parts.append(eff_hint)
+        route_hint = self.get_route_hint(choice)
+        if route_hint:
+            parts.append(route_hint)
+        return ', '.join(parts)
 
     def generate_main_mod_file(self, choices):
         """Genera il file mod principale con il dizionario hint e la screen choice_custom"""
@@ -192,9 +215,13 @@ class WTGenerator:
                 color = self.get_override_color(choice['color_override'])
                 hint = self.get_hint_for_choice(choice)
             elif score == 0:
-                # Scelte neutre senza override: lascia colore originale del gioco
+                # Scelte neutre senza override: lascia colore originale del gioco.
+                # Se però la scelta porta a una scena/label (jump/call) mostra almeno
+                # l'hint della route, senza colorarla (nessuna evidenza automatica
+                # solo per la presenza di una route: potrebbe essere semplice
+                # branching narrativo, non necessariamente "la scelta migliore").
                 color = ''
-                hint = ''
+                hint = self.get_route_hint(choice)
             elif score > 0 and not self.is_choice_best(choice):
                 # Scelta con punteggio positivo ma non la migliore del suo menu
                 # (un'altra scelta nello stesso menu ha un punteggio maggiore):
@@ -232,8 +259,8 @@ screen choice(items):
     vbox:
         for i in items:
             $ _d = wtmod_hints.get(i.caption, (None, None))
-            $ _cap = renpy.translate_string(i.caption) if _d[0] else i.caption
-            $ _lbl = ("{{color=" + _d[0] + "}}" + _cap + "{{/color}}" + ("  {{color=" + wtmod_hint_color + "}}{{size=-8}}(" + _d[1] + "){{/size}}{{/color}}" if _d[1] else "")) if _d[0] else i.caption
+            $ _cap = renpy.translate_string(i.caption) if (_d[0] or _d[1]) else i.caption
+            $ _lbl = ((("{{color=" + _d[0] + "}}" + _cap + "{{/color}}") if _d[0] else _cap) + ("  {{color=" + wtmod_hint_color + "}}{{size=-8}}(" + _d[1] + "){{/size}}{{/color}}" if _d[1] else "")) if (_d[0] or _d[1]) else i.caption
             textbutton _lbl action i.action
 '''
         # Override per eventuali screen di scelta personalizzate (es. choice_custom)
