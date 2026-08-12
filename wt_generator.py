@@ -383,10 +383,12 @@ init python:
             block.extend([
                 f"        _val = getattr(persistent, {name!r}, {{}})",
                 "        if isinstance(_val, dict):",
+                "            _has_tuple_keys = any(isinstance(_k, (list, tuple)) for _k in _val.keys())",
                 "            for _k in list(_val.keys()):",
                 "                _val[_k] = True",
-                "            for _img in renpy.list_images():",
-                "                _val[_img] = True",
+                "            if not _has_tuple_keys:",
+                "                for _img in renpy.list_images():",
+                "                    _val[_img] = True",
                 f"        setattr(persistent, {name!r}, _val)",
             ])
         elif shape == 'list':
