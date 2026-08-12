@@ -232,7 +232,8 @@ screen choice(items):
     vbox:
         for i in items:
             $ _d = wtmod_hints.get(i.caption, (None, None))
-            $ _lbl = ("{{color=" + _d[0] + "}}" + i.caption + "{{/color}}" + ("  {{color=" + wtmod_hint_color + "}}{{size=-8}}(" + _d[1] + "){{/size}}{{/color}}" if _d[1] else "")) if _d[0] else i.caption
+            $ _cap = renpy.translate_string(i.caption) if _d[0] else i.caption
+            $ _lbl = ("{{color=" + _d[0] + "}}" + _cap + "{{/color}}" + ("  {{color=" + wtmod_hint_color + "}}{{size=-8}}(" + _d[1] + "){{/size}}{{/color}}" if _d[1] else "")) if _d[0] else i.caption
             textbutton _lbl action i.action
 '''
         # Override per eventuali screen di scelta personalizzate (es. choice_custom)
