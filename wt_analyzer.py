@@ -402,7 +402,9 @@ class WTAnalyzer:
             self.analyze_file(rpy_file)
             if progress_callback:
                 progress_callback(i, len(rpy_files))
-        
+
+        recompute_best_flags(self.choices)
+
         print(f"Trovate {len(self.choices)} scelte")
         print(f"Trovate {len(self.variables)} variabili uniche")
         
@@ -416,6 +418,25 @@ class WTAnalyzer:
             if choice['is_best']:
                 best_choices.append(choice)
         return best_choices
+
+
+def recompute_best_flags(choices):
+    """Ricalcola is_best/is_best_filtered confrontando le scelte fra loro
+    all'interno dello stesso menu (stesso file + stesso menu_line), invece di
+    valutare ogni scelta isolatamente. Solo la/le scelta/e con punteggio
+    massimo (se positivo) nel gruppo vengono marcate come "best"."""
+    groups = defaultdict(list)
+    for choice in choices:
+        key = (choice.get('file'), choice.get('menu_line'))
+        groups[key].append(choice)
+
+    for group in groups.values():
+        max_total = max((c.get('total_score', 0) for c in group), default=0)
+        max_filtered = max((c.get('filtered_score', 0) for c in group), default=0)
+        for c in group:
+            c['is_best'] = max_total > 0 and c.get('total_score', 0) == max_total
+            c['is_best_filtered'] = max_filtered > 0 and c.get('filtered_score', 0) == max_filtered
+    return choices
 
 
 if __name__ == "__main__":

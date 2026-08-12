@@ -195,6 +195,12 @@ class WTGenerator:
                 # Scelte neutre senza override: lascia colore originale del gioco
                 color = ''
                 hint = ''
+            elif score > 0 and not self.is_choice_best(choice):
+                # Scelta con punteggio positivo ma non la migliore del suo menu
+                # (un'altra scelta nello stesso menu ha un punteggio maggiore):
+                # lascia colore originale del gioco, senza evidenziarla.
+                color = ''
+                hint = ''
             else:
                 color = self.get_color(score)
                 hint = self.get_hint_for_choice(choice)

@@ -12,7 +12,7 @@ from datetime import datetime
 from PIL import Image
 
 from wt_extractor import WTExtractor
-from wt_analyzer import WTAnalyzer
+from wt_analyzer import WTAnalyzer, recompute_best_flags
 from wt_generator import WTGenerator
 from wt_gallery import WTGalleryAnalyzer
 from wt_effects import WTVariableFilter
@@ -928,7 +928,6 @@ class RenPyWTTool:
             effects = choice.get('effects', [])
             filtered_score = self.variable_filter.score(effects)
             choice['filtered_score'] = filtered_score
-            choice['is_best_filtered'] = filtered_score > 0
             if 'hint_text' in choice:
                 # Non sovrascrivere hint custom, solo quello auto
                 if not choice.get('hint_text_custom'):
@@ -937,6 +936,7 @@ class RenPyWTTool:
                         for orig, alias in self.var_aliases.items():
                             raw_hint = raw_hint.replace(orig, alias)
                     choice['hint_text'] = raw_hint
+        recompute_best_flags(self.choices)
         self.apply_filter()
 
     def _apply_detected_route(self):
@@ -974,14 +974,16 @@ class RenPyWTTool:
     def _get_color_emoji(self, choice):
         """Restituisce un emoji che rappresenta il colore in-game effettivo"""
         score = choice.get('filtered_score', choice['total_score'])
+        is_best = choice.get('is_best_filtered', choice.get('is_best', score > 0))
         override = choice.get('color_override')
-        if override == 'best' or (not override and score > 0):
+        if override == 'best' or (not override and score > 0 and is_best):
             return '🟢'
         if override == 'bad' or (not override and score < 0):
             return '🔴'
         if override == 'none':
             return '➖'
-        # neutral / no override / score 0 -> colore originale del gioco
+        # neutral / no override / score 0 / positiva ma non la migliore del suo
+        # menu -> colore originale del gioco
         return '⚪'
 
     def apply_filter(self, *args):
@@ -1000,8 +1002,9 @@ class RenPyWTTool:
         for idx in sorted_indices:
             choice = self.choices[idx]
             score = choice.get('filtered_score', choice['total_score'])
+            is_best = choice.get('is_best_filtered', choice.get('is_best', score > 0))
             has_effects = bool(choice.get('effects', []))
-            if self.filter_mode == 'best' and score <= 0:
+            if self.filter_mode == 'best' and not (score > 0 and is_best):
                 continue
             elif self.filter_mode == 'neutral' and score != 0:
                 continue
