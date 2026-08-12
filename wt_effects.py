@@ -99,7 +99,7 @@ class WTChoiceEffectExtractor:
 
     # Assegnamenti: $ var = val, var += val, persistent.x = y, a, b = (1, 2), etc.
     _ASSIGN_RE = re.compile(
-        r'^\s*(?:\$\s+)?'
+        r'^\s*(?:\$\s*)?'
         r'(?P<vars>(?:[a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)*)'
         r'(?:\s*[,=]\s*[a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)*)*)'
         r'\s*(?P<op>\+|-|\*\*|\*|//|/|%)?(?<!=)=(?!=)'
@@ -108,7 +108,7 @@ class WTChoiceEffectExtractor:
 
     # Chiamate funzione stile $ change_relationship("fiona", 1)
     _FUNC_RE = re.compile(
-        r'^\s*(?:\$\s+)?'
+        r'^\s*(?:\$\s*)?'
         r'(?P<func>[a-zA-Z_]\w*)'
         r'\s*\(\s*'
         r'(?P<args>[^)]*)'
@@ -116,9 +116,9 @@ class WTChoiceEffectExtractor:
     )
 
     # if/elif/else a livello Ren'Py (con o senza $)
-    _IF_RE = re.compile(r'^(?:\$\s+)?if\s+(.+?)\s*:\s*$')
-    _ELIF_RE = re.compile(r'^(?:\$\s+)?elif\s+(.+?)\s*:\s*$')
-    _ELSE_RE = re.compile(r'^(?:\$\s+)?else\s*:\s*$')
+    _IF_RE = re.compile(r'^(?:\$\s*)?if\s+(.+?)\s*:\s*$')
+    _ELIF_RE = re.compile(r'^(?:\$\s*)?elif\s+(.+?)\s*:\s*$')
+    _ELSE_RE = re.compile(r'^(?:\$\s*)?else\s*:\s*$')
 
     # Control flow
     _JUMP_RE = re.compile(r'^jump\s+([a-zA-Z_]\w*)\s*$')
