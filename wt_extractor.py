@@ -65,7 +65,7 @@ class WTExtractor:
         Returns:
             bool: True se estrazione completata con successo
         """
-        rpa_files = list(self.output_dir.glob("*.rpa"))
+        rpa_files = list(self.output_dir.rglob("*.rpa"))
         
         if not rpa_files:
             print("Nessun file .rpa trovato")
